@@ -8,7 +8,7 @@ namespace KoobookDesktopApp
 {
     static class Program
     {
-        /// <summary>
+        /// <summary test>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
