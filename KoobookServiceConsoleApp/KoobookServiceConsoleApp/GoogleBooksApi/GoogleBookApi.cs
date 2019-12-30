@@ -23,7 +23,7 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
         }
 
         //This method will query the google books api using the query that was passed
-        //in as an arugment and return a tuple of books and its row number
+        //in as an arugment and return a tuple of books and its total volumes found count
         public Tuple<int?, List<BookModel>> Search(string query, int offset, int count) {
             var listQuery = _bookService.Volumes.List(query);
             listQuery.MaxResults = count;
