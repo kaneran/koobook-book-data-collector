@@ -40,5 +40,12 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
             }).ToList();
             return new Tuple<int?, List<BookModel>>(result.TotalItems, books);
         }
+
+        public BookModel CollectDataForBook(string isbn) {
+            var bookResults = Search(isbn, 0, 1);
+            var book = bookResults.Item2.First();
+            return book;
+        }
+
     }
 }
