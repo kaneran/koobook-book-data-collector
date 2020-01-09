@@ -12,6 +12,7 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
     //Credit to Meysam N for the book api implementation , link- https://www.c-sharpcorner.com/code/3301/google-books-search-with-c-sharp.aspx
     class GoogleBookApi
     {
+        public GoogleBookModel googleBookModel;
         public readonly BooksService _bookService;
             public GoogleBookApi(string apiKey)
         {
@@ -24,27 +25,29 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
 
         //This method will query the google books api using the query that was passed
         //in as an arugment and return a tuple of books and its total volumes found count
-        public Tuple<int?, List<BookModel>> Search(string query, int offset, int count) {
+        public Tuple<int?, List<GoogleBookModel>> Search(string query, int offset, int count) {
             var listQuery = _bookService.Volumes.List(query);
             listQuery.MaxResults = count;
             listQuery.StartIndex = offset;
             var result = listQuery.Execute();
-            var books = result.Items.Select(book => new BookModel()
+            var books = result.Items.Select(book => new GoogleBookModel()
             {
-                Id = book.Id,
                 Title = book.VolumeInfo.Title,
                 Description = book.VolumeInfo.Description,
-                PageCount = book.VolumeInfo.PageCount,
+                Subtitle = book.VolumeInfo.Subtitle,
+                Genres = book.VolumeInfo.Categories.ToList(),
                 AverageRating = book.VolumeInfo.AverageRating,
-                Authors = book.VolumeInfo.Authors.ToList()
+                Authors = book.VolumeInfo.Authors.ToList(),
+                ThumbnailUrl = book.VolumeInfo.ImageLinks.SmallThumbnail,
+                PageCount = book.VolumeInfo.PageCount
             }).ToList();
-            return new Tuple<int?, List<BookModel>>(result.TotalItems, books);
+            return new Tuple<int?, List<GoogleBookModel>>(result.TotalItems, books);
         }
 
-        public BookModel CollectDataForBook(string isbn) {
+        public GoogleBookModel CollectDataForBook(string isbn) {
             var bookResults = Search(isbn, 0, 1);
-            var book = bookResults.Item2.First();
-            return book;
+            googleBookModel = bookResults.Item2.First();
+            return googleBookModel;
         }
 
     }

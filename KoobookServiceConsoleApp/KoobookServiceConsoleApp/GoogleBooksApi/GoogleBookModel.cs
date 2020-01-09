@@ -3,13 +3,8 @@ using System.Collections.Generic;
 
 namespace KoobookServiceConsoleApp.GoolgeBooksApi
 {
-    public class BookModel
+    public class GoogleBookModel
     {
-        public string Id
-        {
-            get;
-            set;
-        }
 
         public string Title
         {
@@ -23,7 +18,7 @@ namespace KoobookServiceConsoleApp.GoolgeBooksApi
             set;
         }
 
-        public int? PageCount
+        public string Subtitle
         {
             get;
             set;
@@ -36,6 +31,23 @@ namespace KoobookServiceConsoleApp.GoolgeBooksApi
         }
 
         public List<string> Authors
+        {
+            get;
+            set;
+        }
+
+        public List<string> Genres {
+            get;
+            set;
+        }
+
+        public string ThumbnailUrl
+        {
+            get;
+            set;
+        }
+
+        public int? PageCount
         {
             get;
             set;

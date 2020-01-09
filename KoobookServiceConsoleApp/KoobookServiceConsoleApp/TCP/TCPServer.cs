@@ -1,7 +1,12 @@
-﻿using System;
+﻿using KoobookServiceConsoleApp.Amazon;
+using KoobookServiceConsoleApp.GoogleBooksApi;
+using System;
+using System.Collections.Generic;
+using System.Configuration;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace KoobookServiceConsoleApp.TCP
 {
@@ -10,7 +15,8 @@ namespace KoobookServiceConsoleApp.TCP
     {
         //This method initialises a port and creates a new TCP listener using that port
         //it then waits a client connects to it and it accepts it and then proceed to read and write to the client
-        public void Listen()
+        //Credit to AWinkle for the idea on how to run tasks simultaneously https://codereview.stackexchange.com/questions/59147/running-2-sets-of-tasks-at-the-same-time
+        public async Task Listen()
         {
             TcpListener server = null;
             StringBuilder stringBuilder;
@@ -56,6 +62,11 @@ namespace KoobookServiceConsoleApp.TCP
                     //Send the book data to the client
                     while (dataSent == false)
                     {
+                        BookDataController bookDataController = new BookDataController();
+                        var book = bookDataController.CollectDataFromSources(isbn);
+
+
+
                         //data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
                         //Console.WriteLine("Received data{0}: ", data);
 
