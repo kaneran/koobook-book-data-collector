@@ -16,11 +16,11 @@ namespace KoobookServiceConsoleApp
         static async Task Main(string[] args)
         {
 
-            //TCPServer server = new TCPServer();
-            //server.Listen();
-            BookDataController bookDataController = new BookDataController();
-            bookDataController.CollectDataFromSources("9780140071863");
-            var x = bookDataController.bookModel;
+            TCPServer server = new TCPServer();
+            server.Listen();
+            //BookDataController bookDataController = new BookDataController();
+            //bookDataController.CollectDataFromSources("9780749442620");
+            //var x = bookDataController.ConcatBookData();
         }
     }
 }

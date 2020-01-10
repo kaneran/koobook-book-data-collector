@@ -45,7 +45,6 @@ namespace KoobookServiceConsoleApp
 
             bookModel = new BookModel();
             SetBookTitle(goodreadsBookData, googleBooksBookData);
-
             SetAuthorsOfBook(goodreadsBookData, googleBooksBookData);
             SetDescription(goodreadsBookData, googleBooksBookData);
             SetAverageRatings(goodreadsBookData, googleBooksBookData, amazonBookData);
@@ -53,11 +52,90 @@ namespace KoobookServiceConsoleApp
             SetAmazonRatings(amazonBookData);
             SetAmazonReviews(amazonBookData);
             SetReviewCount(amazonBookData);
-            SetGenre(googleBooksBookData);
+            SetGenres(googleBooksBookData);
             SetSubtitle(googleBooksBookData);
             SetIsbn(goodreadsBookData);
         }
+        //Each data attribute is separte by "$"
+        public string ConcatBookData() {
 
+            StringBuilder sb = new StringBuilder();
+            Append(sb,bookModel.Title , "$");
+            if (bookModel.Authors.Count > 1)
+            {
+                for (int i = 0; i < bookModel.Authors.Count; i++)
+                {
+                    Append(sb, bookModel.Authors[i], "#");
+
+                }
+                sb.Append("$");
+
+            }
+            else
+            {
+                Append(sb, bookModel.Authors.First(), "$");
+            }
+
+            Append(sb, bookModel.Description , "$");
+            Append(sb, bookModel.Subtitle, "$");
+            Append(sb, bookModel.Isbn, "$");
+            Append(sb, bookModel.GoogleBooksAverageRating.ToString(), "$");
+            Append(sb, bookModel.GoodreadsAverageRating.ToString(), "$");
+            Append(sb, bookModel.AmazonAverageRating.ToString(), "$");
+            Append(sb, bookModel.AmazonFiveStarRatingPercentage.ToString(), "$");
+            Append(sb, bookModel.AmazonFourStarRatingPercentage.ToString(), "$");
+            Append(sb, bookModel.AmazonThreeStarRatingPercentage.ToString(), "$");
+            Append(sb, bookModel.AmazonTwoStarRatingPercentage.ToString(), "$");
+            Append(sb, bookModel.AmazonOneStarRatingPercentage.ToString(), "$");
+
+            if (bookModel.AmazonReviews.Count > 1)
+            {
+                for (int i = 0; i < bookModel.AmazonReviews.Count; i++)
+                {
+                    Append(sb, bookModel.AmazonReviews[i], "#");
+
+                }
+                sb.Append("$");
+
+            }
+            else
+            {
+                Append(sb, bookModel.AmazonReviews.First(), "$");
+            }
+
+            Append(sb, bookModel.AmazonReviewsCount.ToString(), "$");
+
+            if (bookModel.Genres.Count > 1)
+            {
+                for (int i = 0; i < bookModel.Genres.Count; i++)
+                {
+                    Append(sb, bookModel.Genres[i], "#");
+
+                }
+                sb.Append("$");
+
+            }
+            else
+            {
+                Append(sb, bookModel.Genres.First(), "$");
+            }
+
+            Append(sb, bookModel.PageCount.ToString(), "$");
+
+            return sb.ToString();
+        }
+
+        //If the string is empty then write a "*". This makes it easier to know which strings were empty when the android application decodes it
+        public void Append(StringBuilder sb, string s, string writeChar="") {
+            if (s != null)
+            {
+                sb.Append(s + writeChar);
+            }
+            else {
+                sb.Append("*" + writeChar);
+            }
+
+        }
         private void SetIsbn(GoodreadsModel goodreadsBookData)
         {
             if (goodreadsBookData.Isbn != null)
@@ -74,7 +152,7 @@ namespace KoobookServiceConsoleApp
             }
         }
 
-        private void SetGenre(GoogleBookModel googleBooksBookData)
+        private void SetGenres(GoogleBookModel googleBooksBookData)
         {
             if (googleBooksBookData.Genres != null)
             {

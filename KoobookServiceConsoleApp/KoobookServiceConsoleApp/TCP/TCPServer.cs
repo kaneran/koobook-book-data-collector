@@ -6,6 +6,7 @@ using System.Configuration;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace KoobookServiceConsoleApp.TCP
@@ -47,15 +48,21 @@ namespace KoobookServiceConsoleApp.TCP
 
                     int i;
                     bool dataSent = false;
+                    bool isbnReceived = false;
                     bool ackReceived = false;
 
                     //Read data from client to receive all the bytes and append it together to prdouce the isbn number
-                    while ((i = stream.Read(isbnBytes, 0, isbnBytes.Length)) != 0) {
+                    while (isbnReceived == false) {
+                        i = stream.Read(isbnBytes, 0, isbnBytes.Length);
                         var isbnData = System.Text.Encoding.ASCII.GetString(isbnBytes, 0, i);
                         stringBuilder.Append(isbnData);
+                        if (stringBuilder.ToString().Contains("#")) {
+                            isbnReceived = true;
+                        }
+
                     }
 
-                    isbn = stringBuilder.ToString();
+                    isbn = stringBuilder.ToString().Replace("#","");
 
 
 
@@ -64,7 +71,7 @@ namespace KoobookServiceConsoleApp.TCP
                     {
                         BookDataController bookDataController = new BookDataController();
                         bookDataController.CollectDataFromSources(isbn);
-
+                        var bookData = bookDataController.ConcatBookData();
 
 
                         //data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
@@ -72,13 +79,13 @@ namespace KoobookServiceConsoleApp.TCP
 
                         //data = data.ToUpper();
 
-                        byte[] msg = System.Text.Encoding.ASCII.GetBytes("Book data");
+                        byte[] msg = System.Text.Encoding.ASCII.GetBytes(bookData);
                         stream.Write(msg, 0, msg.Length);
-                        Console.WriteLine("Sent: {0} ", data);
+                        Console.WriteLine("Sent: {0} ", bookData);
 
-                        msg = System.Text.Encoding.ASCII.GetBytes("Genre of book");
-                        stream.Write(msg, 0, msg.Length);
-                        Console.WriteLine("Sent: {0} ", data);
+                        //msg = System.Text.Encoding.ASCII.GetBytes("Genre of book");
+                        //stream.Write(msg, 0, msg.Length);
+                        //Console.WriteLine("Sent: {0} ", data);
                         dataSent = true;
 
                     }
@@ -106,7 +113,7 @@ namespace KoobookServiceConsoleApp.TCP
                             byte[] closed_msg = System.Text.Encoding.ASCII.GetBytes("CLOSED");
                             stream.Write(closed_msg, 0, closed_msg.Length);
                             ackReceived = true;
-
+                            Thread.Sleep(1000);
                         }
                     }
                     client.Close();
