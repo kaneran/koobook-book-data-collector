@@ -48,19 +48,19 @@ namespace KoobookServiceConsoleApp
             set;
         }
 
-        public double GoodreadsAverageRating
+        public double? GoodreadsAverageRating
         {
             get;
             set;
         }
 
-        public double GoogleBooksAverageRating
+        public double? GoogleBooksAverageRating
         {
             get;
             set;
         }
 
-        public double AmazonAverageRating
+        public double? AmazonAverageRating
         {
             get;
             set;
@@ -102,7 +102,7 @@ namespace KoobookServiceConsoleApp
             set;
         }
 
-        public int AmazonReviewsCount
+        public int? AmazonReviewsCount
         {
             get;
             set;

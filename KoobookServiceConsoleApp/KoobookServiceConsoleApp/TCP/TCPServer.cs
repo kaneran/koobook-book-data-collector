@@ -63,7 +63,7 @@ namespace KoobookServiceConsoleApp.TCP
                     while (dataSent == false)
                     {
                         BookDataController bookDataController = new BookDataController();
-                        var book = bookDataController.CollectDataFromSources(isbn);
+                        bookDataController.CollectDataFromSources(isbn);
 
 
 

@@ -1,28 +1,30 @@
 ﻿using Goodreads;
 using Goodreads.Models.Response;
-using KoobookServiceConsoleApp.GoodreadsApi;
+using KoobookServiceConsoleApp.GoodReadsApi;
 using System;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace KoobookServiceConsoleApp.GoodreadsApi
+namespace KoobookServiceConsoleApp.GoodReadsApi
 {
     //Credit to https://github.com/adamkrogh/goodreads-dotnet for the API wrapper
     public class GoodreadsApi
     {
-        public GoodreadsModel goodreadsModel;
+        public GoodreadsModel goodreadsModel { get; set; }
+        public Book book { get; set; }
         public readonly IGoodreadsClient client; 
         public GoodreadsApi(string apiKey, string apiSecret)
         {
             client = GoodreadsClient.Create(apiKey, apiSecret);
         }
 
-        public async Task Search(string isbn) {
+        public async Task<Book> Search(string isbn) {
+            BookDataController bookDataController = new BookDataController();
             var book = await client.Books.GetByIsbn(isbn);
-            CollectDataForBook(book);
+            return book;
         }
 
-        public void CollectDataForBook(Book book) {
+        public GoodreadsModel CollectDataForBook(Book book) {
             goodreadsModel = new GoodreadsModel() {
                 Title = book.Title,
                 Isbn = book.Isbn13,
@@ -31,6 +33,7 @@ namespace KoobookServiceConsoleApp.GoodreadsApi
                 Authors = book.Authors,
                 PageCount = book.Pages
             };
+            return goodreadsModel;
         }
 
         //Because the description return from the api contains special characters such as "<i>" and "</b>

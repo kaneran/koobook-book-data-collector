@@ -32,14 +32,14 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
             var result = listQuery.Execute();
             var books = result.Items.Select(book => new GoogleBookModel()
             {
-                Title = book.VolumeInfo.Title,
-                Description = book.VolumeInfo.Description,
-                Subtitle = book.VolumeInfo.Subtitle,
-                Genres = book.VolumeInfo.Categories.ToList(),
-                AverageRating = book.VolumeInfo.AverageRating,
-                Authors = book.VolumeInfo.Authors.ToList(),
-                ThumbnailUrl = book.VolumeInfo.ImageLinks.SmallThumbnail,
-                PageCount = book.VolumeInfo.PageCount
+                Title = (string) HandleNull(book.VolumeInfo.Title),
+                Description = (string) HandleNull(book.VolumeInfo.Description),
+                Subtitle = (string) HandleNull(book.VolumeInfo.Subtitle),
+                Genres = (List<string>) HandleNull(book.VolumeInfo.Categories.ToList()),
+                AverageRating = (double) HandleNull(book.VolumeInfo.AverageRating),
+                Authors = (List<string>) HandleNull(book.VolumeInfo.Authors.ToList()),
+                ThumbnailUrl = (string) HandleNull(book.VolumeInfo.ImageLinks.SmallThumbnail),
+                PageCount = (int) HandleNull(book.VolumeInfo.PageCount)
             }).ToList();
             return new Tuple<int?, List<GoogleBookModel>>(result.TotalItems, books);
         }
@@ -48,6 +48,18 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
             var bookResults = Search(isbn, 0, 1);
             googleBookModel = bookResults.Item2.First();
             return googleBookModel;
+        }
+
+        public Object HandleNull(Object obj)
+        {
+            if (obj == null)
+            {
+                return null;
+            }
+            else
+            {
+                return obj;
+            }
         }
 
     }

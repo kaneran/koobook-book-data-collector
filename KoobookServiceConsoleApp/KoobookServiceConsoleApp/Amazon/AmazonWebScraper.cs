@@ -14,81 +14,139 @@ namespace KoobookServiceConsoleApp.Amazon
     public class AmazonWebScraper
     {
         public AmazonModel amazonModel;
-        public AmazonModel CollectDataForBook(string isbn)
+        public AmazonModel CollectDataForBook(string isbn, string author)
         {
             ChromeOptions options = new ChromeOptions();
-            options.AddArguments("headless");
-            IWebDriver driver = new ChromeDriver(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), options);
+            //options.AddArguments("headless");
+            IWebDriver driver = new ChromeDriver(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
             SeleniumHelper helper = new SeleniumHelper();
             driver.Navigate().GoToUrl("https://www.amazon.co.uk/");
             SearchBook(isbn, driver, helper);
-            AccessBookFromSearchResults(driver, helper);
+            AccessBookFromSearchResults(driver, helper, author);
+
+            var averageRating = 0.0;
+
             var ratingsDictionary = GetCustomerRatingsData(driver, helper);
-            ratingsDictionary.TryGetValue("fiveStar", out var fiveStarRatingPercentage);
-            ratingsDictionary.TryGetValue("fourStar", out var fourStarRatingPercentage);
-            ratingsDictionary.TryGetValue("threeStar", out var threeStarRatingPercentage);
-            ratingsDictionary.TryGetValue("twoStar", out var twoStarRatingPercentage);
-            ratingsDictionary.TryGetValue("oneStar", out var oneStarRatingPercentage);
-            var averageRating = CalculateAverageRating(oneStarRatingPercentage, twoStarRatingPercentage, threeStarRatingPercentage, fourStarRatingPercentage, fiveStarRatingPercentage);
+            int fiveStarRatingPercentage = 0;
+            int fourStarRatingPercentage = 0;
+            int threeStarRatingPercentage = 0;
+            int twoStarRatingPercentage = 0;
+            int oneStarRatingPercentage = 0;
+            if (ratingsDictionary != null) {
+                ratingsDictionary.TryGetValue("fiveStar", out  fiveStarRatingPercentage);
+                ratingsDictionary.TryGetValue("fourStar", out  fourStarRatingPercentage);
+                ratingsDictionary.TryGetValue("threeStar", out  threeStarRatingPercentage);
+                ratingsDictionary.TryGetValue("twoStar", out  twoStarRatingPercentage);
+                ratingsDictionary.TryGetValue("oneStar", out  oneStarRatingPercentage);
+                averageRating = CalculateAverageRating(oneStarRatingPercentage, twoStarRatingPercentage, threeStarRatingPercentage, fourStarRatingPercentage, fiveStarRatingPercentage);
+            }
+            
             var reviewsCount = GetReviewsCount(driver);
             var reviews = GetReviews(driver);
-            amazonModel = new AmazonModel()
-            {
-                AverageRating = averageRating,
-                FiveStarRatingPercentage = fiveStarRatingPercentage,
-                FourStarRatingPercentage = fourStarRatingPercentage,
-                ThreeStarRatingPercentage = threeStarRatingPercentage,
-                TwoStarRatingPercentage = twoStarRatingPercentage,
-                OneStarRatingPercentage = oneStarRatingPercentage,
-                Reviews = reviews,
-                ReviewCount = reviewsCount
-            };
+
+            amazonModel = new AmazonModel();
+            if (ratingsDictionary != null) {
+                amazonModel.AverageRating = averageRating;
+                amazonModel.FiveStarRatingPercentage = fiveStarRatingPercentage;
+                amazonModel.FourStarRatingPercentage = fourStarRatingPercentage;
+                amazonModel.ThreeStarRatingPercentage = threeStarRatingPercentage;
+                amazonModel.TwoStarRatingPercentage = twoStarRatingPercentage;
+                amazonModel.OneStarRatingPercentage = oneStarRatingPercentage;
+            }
+
+            if (reviews != null) {
+                amazonModel.Reviews = reviews;
+            }
+
+            amazonModel.ReviewCount = reviewsCount;
+
             return amazonModel;
         }
 
+        //I mainly want the reviews to be from the UK as it will be written in the English language
+        //However if there are international reviews then translate these to English
         private List<string> GetReviews(IWebDriver driver)
         {
-            var links = driver.FindElements(By.ClassName("a-link-emphasis"));
-            var seeAllReviewsFromTheUKLink = links.Where(link => link.Text.Equals("See all reviews from the United Kingdom")).SingleOrDefault();
-            seeAllReviewsFromTheUKLink.Click();
-            var reviews = driver.FindElements(By.ClassName("review-title")).Where(review => review.Displayed.Equals(true)).Select(review => review.Text).ToList();
-            return reviews;
+            try
+            {
+                var reviews = driver.FindElements(By.ClassName("review"));
+                var internationalReviews = reviews.Where(review => review.Text.Contains("Translate review to English")).ToList();
+
+                if (internationalReviews.Count > 0)
+                {
+                    //Translate each review to english
+                    foreach (var internationalReview in internationalReviews)
+                    {
+                        var translateReviewToEnglishLink = internationalReview.FindElement(By.LinkText("Translate review to English"));
+                        translateReviewToEnglishLink.Click();
+                    }
+                }
+                var reviewTitles = driver.FindElements(By.ClassName("review-title")).Where(review => review.Displayed.Equals(true)).Select(review => review.Text).ToList();
+                return reviewTitles;
+            }
+            catch (Exception e) {
+                return null;
+            }
         }
 
+        
         private int GetReviewsCount(IWebDriver driver)
         {
-            var reviewsCountText = driver.FindElement(By.Id("acrCustomerReviewText")).Text;
-            var reviewsCountFormatted = reviewsCountText.Replace("ratings", "");
-            var reviewsCount = Int32.Parse(reviewsCountFormatted);
-            return reviewsCount;
+            try
+            {
+                var reviewsCountText = driver.FindElement(By.Id("acrCustomerReviewText")).Text;
+                var reviewsCountFormatted = "";
+                var reviewsCount = 0;
+                //Contains more than one more rating
+                if (reviewsCountText.Contains("ratings"))
+                    reviewsCountFormatted = reviewsCountText.Replace("ratings", "");
+
+                //Contains only one rating
+                else if (reviewsCountText.Contains("rating"))
+                    reviewsCountFormatted = reviewsCountText.Replace("rating", "");
+
+                //If the reviews count is empty then that implies that there were no reviews made against the book
+                if (reviewsCountFormatted != "")
+                    reviewsCount = Int32.Parse(reviewsCountFormatted);
+                return reviewsCount;
+            }
+            catch (Exception e) {
+                return 0;
+            }
         }
 
         private Dictionary<string,int> GetCustomerRatingsData(IWebDriver driver, SeleniumHelper helper)
         {
-            Dictionary<string, int> ratingsDictionary = new Dictionary<string, int>();
-            helper.ScrollToElement(driver, By.Id("reviewsMedley"));
-            var customerRatingBars = driver.FindElements(By.ClassName("a-meter")).ToList();
-            var fiveStarRatingRow = customerRatingBars[0];
-            var fiveStarRatingValue = GetRating(fiveStarRatingRow);
-            ratingsDictionary.Add("fiveStar", fiveStarRatingValue);
+            try
+            {
+                Dictionary<string, int> ratingsDictionary = new Dictionary<string, int>();
+                helper.ScrollToElement(driver, By.Id("reviewsMedley"));
+                var customerRatingBars = driver.FindElements(By.ClassName("a-meter")).ToList();
+                var fiveStarRatingRow = customerRatingBars[0];
+                var fiveStarRatingValue = GetRating(fiveStarRatingRow);
+                ratingsDictionary.Add("fiveStar", fiveStarRatingValue);
 
-            var fourStarRatingRow = customerRatingBars[1];
-            var fourStarRatingValue = GetRating(fourStarRatingRow);
-            ratingsDictionary.Add("fourStar", fourStarRatingValue);
+                var fourStarRatingRow = customerRatingBars[1];
+                var fourStarRatingValue = GetRating(fourStarRatingRow);
+                ratingsDictionary.Add("fourStar", fourStarRatingValue);
 
-            var threeStarRatingRow = customerRatingBars[2];
-            var threeStarRatingValue = GetRating(threeStarRatingRow);
-            ratingsDictionary.Add("threeStar", threeStarRatingValue);
+                var threeStarRatingRow = customerRatingBars[2];
+                var threeStarRatingValue = GetRating(threeStarRatingRow);
+                ratingsDictionary.Add("threeStar", threeStarRatingValue);
 
-            var twoStarRatingRow = customerRatingBars[3];
-            var twoStarRatingValue = GetRating(twoStarRatingRow);
-            ratingsDictionary.Add("twoStar", twoStarRatingValue);
+                var twoStarRatingRow = customerRatingBars[3];
+                var twoStarRatingValue = GetRating(twoStarRatingRow);
+                ratingsDictionary.Add("twoStar", twoStarRatingValue);
 
-            var oneStarRatingRow = customerRatingBars[4];
-            var oneStarRatingValue = GetRating(oneStarRatingRow);
-            ratingsDictionary.Add("oneStar", oneStarRatingValue);
+                var oneStarRatingRow = customerRatingBars[4];
+                var oneStarRatingValue = GetRating(oneStarRatingRow);
+                ratingsDictionary.Add("oneStar", oneStarRatingValue);
 
-            return ratingsDictionary;
+                return ratingsDictionary;
+            }
+            catch (Exception e) {
+                return null;
+            }
         }
 
         private double CalculateAverageRating(int oneStarRatingPercentage, int twoStarRatingPercentage, int threeStarRatingPercentage, int fourStarRatingPercentage, int fiveStarRatingPercentage)
@@ -105,20 +163,36 @@ namespace KoobookServiceConsoleApp.Amazon
             return Int32.Parse(ratingValueFormatted);
         }
 
-        private void AccessBookFromSearchResults(IWebDriver driver, SeleniumHelper helper)
+        //I selected the result which contains the author that was retrived from the Googlebooks/Goodreads sources
+        //to ensure that this solution doesnt click on the incorrect result item which leads to collecting information about 
+        // a different book. 
+        private void AccessBookFromSearchResults(IWebDriver driver, SeleniumHelper helper, String author)
         {
-            var searchResults = helper.WaitForElementsToBeVisible(driver, By.ClassName("s-result-list"))[0];
-            var searchResultItems = searchResults.FindElements(By.ClassName("s-result-item"));
-            var targetResultItem = searchResultItems[0];
-            var targetResultThumbnailImage = targetResultItem.FindElement(By.ClassName("s-image-fixed-height"));
-            targetResultThumbnailImage.Click();
+            try
+            {
+                var searchResults = helper.WaitForElementsToBeVisible(driver, By.ClassName("s-result-list"))[0];
+                var searchResultItems = searchResults.FindElements(By.ClassName("s-result-item"));
+                var targetResultItem = searchResultItems.Where(item => item.Text.Contains(author)).SingleOrDefault();
+                var targetResultThumbnailImage = targetResultItem.FindElement(By.ClassName("s-image-fixed-height"));
+                targetResultThumbnailImage.Click();
+            }
+         
+            catch (Exception e) {
+                driver.Quit();
+            }
         }
 
         private void SearchBook(string isbn, IWebDriver driver, SeleniumHelper helper)
         {
-            IWebElement searchBox = helper.WaitForElementToBeClickable(driver, By.Id("twotabsearchtextbox"));
-            searchBox.SendKeys(isbn);
-            searchBox.SendKeys(Keys.Enter);
+            try
+            {
+                IWebElement searchBox = helper.WaitForElementToBeClickable(driver, By.Id("twotabsearchtextbox"));
+                searchBox.SendKeys(isbn);
+                searchBox.SendKeys(Keys.Enter);
+            }
+            catch (Exception e) {
+                driver.Quit();
+            }
         }
 
     }
