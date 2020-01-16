@@ -32,14 +32,14 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
             var result = listQuery.Execute();
             var books = result.Items.Select(book => new GoogleBookModel()
             {
-                Title = (string) HandleNull(book.VolumeInfo.Title),
-                Description = (string) HandleNull(book.VolumeInfo.Description),
-                Subtitle = (string) HandleNull(book.VolumeInfo.Subtitle),
-                Genres = (List<string>) HandleNull(book.VolumeInfo.Categories.ToList()),
-                AverageRating = (double) HandleNull(book.VolumeInfo.AverageRating),
-                Authors = (List<string>) HandleNull(book.VolumeInfo.Authors.ToList()),
-                ThumbnailUrl = (string) HandleNull(book.VolumeInfo.ImageLinks.SmallThumbnail),
-                PageCount = (int) HandleNull(book.VolumeInfo.PageCount)
+                Title = (string) HandleNull(book.VolumeInfo.Title, DataType.String),
+                Description = (string) HandleNull(book.VolumeInfo.Description, DataType.String),
+                Subtitle = (string) HandleNull(book.VolumeInfo.Subtitle, DataType.String),
+                Genres = (List<string>) HandleNull(book.VolumeInfo.Categories, DataType.StringList),
+                AverageRating = (double) HandleNull(book.VolumeInfo.AverageRating, DataType.Double),
+                Authors = (List<string>) HandleNull(book.VolumeInfo.Authors, DataType.StringList),
+                ThumbnailUrl = (string) HandleNull(book.VolumeInfo.ImageLinks.SmallThumbnail, DataType.String),
+                PageCount = (int) HandleNull(book.VolumeInfo.PageCount, DataType.Int)
             }).ToList();
             return new Tuple<int?, List<GoogleBookModel>>(result.TotalItems, books);
         }
@@ -50,16 +50,29 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
             return googleBookModel;
         }
 
-        public Object HandleNull(Object obj)
+        public Object HandleNull(Object obj, DataType dataType)
         {
             if (obj == null)
             {
-                return null;
-            }
+                if (dataType.Equals(DataType.Int))
+                    return 0;
+                else if (dataType.Equals(DataType.String))
+                    return "";
+                else if (dataType.Equals(DataType.Double))
+                    return (double)0;
+
+                else
+                    return new List<string>();
+
+            } 
             else
             {
                 return obj;
             }
+        }
+
+        public enum DataType {
+            String, Int, StringList, Double
         }
 
     }

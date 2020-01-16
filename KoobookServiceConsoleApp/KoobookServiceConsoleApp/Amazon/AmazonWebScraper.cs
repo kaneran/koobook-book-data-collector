@@ -59,7 +59,7 @@ namespace KoobookServiceConsoleApp.Amazon
             }
 
             amazonModel.ReviewCount = reviewsCount;
-
+            driver.Quit();
             return amazonModel;
         }
 
@@ -172,7 +172,7 @@ namespace KoobookServiceConsoleApp.Amazon
             {
                 var searchResults = helper.WaitForElementsToBeVisible(driver, By.ClassName("s-result-list"))[0];
                 var searchResultItems = searchResults.FindElements(By.ClassName("s-result-item"));
-                var targetResultItem = searchResultItems.Where(item => item.Text.Contains(author)).SingleOrDefault();
+                var targetResultItem = searchResultItems.Where(item => item.Text.Contains(author)).First();
                 var targetResultThumbnailImage = targetResultItem.FindElement(By.ClassName("s-image-fixed-height"));
                 targetResultThumbnailImage.Click();
             }

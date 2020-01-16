@@ -63,6 +63,7 @@ namespace KoobookServiceConsoleApp.TCP
                     }
 
                     isbn = stringBuilder.ToString().Replace("#","");
+                    Console.WriteLine("Received: {0}",isbn);
 
 
 

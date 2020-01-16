@@ -19,7 +19,7 @@ namespace KoobookServiceConsoleApp
             TCPServer server = new TCPServer();
             server.Listen();
             //BookDataController bookDataController = new BookDataController();
-            //bookDataController.CollectDataFromSources("9780749442620");
+            //bookDataController.CollectDataFromSources("9780007354771");
             //var x = bookDataController.ConcatBookData();
         }
     }

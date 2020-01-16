@@ -36,6 +36,12 @@ namespace KoobookServiceConsoleApp
             set;
         }
 
+        public string ThumbnailUrl
+        {
+            get;
+            set;
+        }
+
         public int? PageCount
         {
             get;
@@ -107,6 +113,8 @@ namespace KoobookServiceConsoleApp
             get;
             set;
         }
+
+
 
 
     }
