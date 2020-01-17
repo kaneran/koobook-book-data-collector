@@ -151,7 +151,7 @@ namespace KoobookServiceConsoleApp
         }
 
         public void SetThumbnailUrl(GoogleBookModel googleBooksBookData) {
-            if (String.IsNullOrEmpty(googleBooksBookData.ThumbnailUrl))
+            if (!String.IsNullOrEmpty(googleBooksBookData.ThumbnailUrl))
             {
                 bookModel.ThumbnailUrl = googleBooksBookData.ThumbnailUrl;
             }
@@ -161,7 +161,7 @@ namespace KoobookServiceConsoleApp
         }
         private void SetIsbn(GoodreadsModel goodreadsBookData, string retrievedIsbn)
         {
-            if (String.IsNullOrEmpty(goodreadsBookData.Isbn))
+            if (!String.IsNullOrEmpty(goodreadsBookData.Isbn))
             {
                 bookModel.Isbn = goodreadsBookData.Isbn;
             }
