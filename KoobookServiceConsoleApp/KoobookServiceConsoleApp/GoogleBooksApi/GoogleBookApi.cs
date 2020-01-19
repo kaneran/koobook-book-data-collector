@@ -26,27 +26,49 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
         //This method will query the google books api using the query that was passed
         //in as an arugment and return a tuple of books and its total volumes found count
         public Tuple<int?, List<GoogleBookModel>> Search(string query, int offset, int count) {
-            var listQuery = _bookService.Volumes.List(query);
-            listQuery.MaxResults = count;
-            listQuery.StartIndex = offset;
-            var result = listQuery.Execute();
-            var books = result.Items.Select(book => new GoogleBookModel()
+            try
             {
-                Title = (string) HandleNull(book.VolumeInfo.Title, DataType.String),
-                Description = (string) HandleNull(book.VolumeInfo.Description, DataType.String),
-                Subtitle = (string) HandleNull(book.VolumeInfo.Subtitle, DataType.String),
-                Genres = (List<string>) HandleNull(book.VolumeInfo.Categories, DataType.StringList),
-                AverageRating = (double) HandleNull(book.VolumeInfo.AverageRating, DataType.Double),
-                Authors = (List<string>) HandleNull(book.VolumeInfo.Authors, DataType.StringList),
-                ThumbnailUrl = (string) HandleNull(book.VolumeInfo.ImageLinks.SmallThumbnail, DataType.String),
-                PageCount = (int) HandleNull(book.VolumeInfo.PageCount, DataType.Int)
-            }).ToList();
-            return new Tuple<int?, List<GoogleBookModel>>(result.TotalItems, books);
+                var listQuery = _bookService.Volumes.List(query);
+                listQuery.MaxResults = count;
+                listQuery.StartIndex = offset;
+                var result = listQuery.Execute();
+                var books = result.Items.Select(book => new GoogleBookModel()
+                {
+                    Title = (string)HandleNull(book.VolumeInfo.Title, DataType.String),
+                    Description = (string)HandleNull(book.VolumeInfo.Description, DataType.String),
+                    Subtitle = (string)HandleNull(book.VolumeInfo.Subtitle, DataType.String),
+                    Genres = (List<string>)HandleNull(book.VolumeInfo.Categories, DataType.StringList),
+                    AverageRating = (double)HandleNull(book.VolumeInfo.AverageRating, DataType.Double),
+                    Authors = (List<string>)HandleNull(book.VolumeInfo.Authors, DataType.StringList),
+                    ThumbnailUrl = (string)HandleNull(book.VolumeInfo.ImageLinks.SmallThumbnail, DataType.String),
+                    PageCount = (int)HandleNull(book.VolumeInfo.PageCount, DataType.Int)
+                }).ToList();
+                return new Tuple<int?, List<GoogleBookModel>>(result.TotalItems, books);
+            }
+            catch (Exception e) {
+                return null;
+            }
         }
 
         public GoogleBookModel CollectDataForBook(string isbn) {
             var bookResults = Search(isbn, 0, 1);
-            googleBookModel = bookResults.Item2.First();
+            if (bookResults != null)
+            {
+                googleBookModel = bookResults.Item2.First();
+            }
+            else {
+                googleBookModel = new GoogleBookModel() {
+                    Title = "",
+                    Description= "",
+                    Subtitle= "",
+                    AverageRating = 0,
+                    Authors = new List<string>(),
+                    Genres = new List<string>(),
+                    ThumbnailUrl = "",
+                    PageCount = 0
+                };
+            }
+            
             return googleBookModel;
         }
 
