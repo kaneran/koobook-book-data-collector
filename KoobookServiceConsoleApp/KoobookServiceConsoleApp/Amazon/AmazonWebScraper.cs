@@ -20,46 +20,66 @@ namespace KoobookServiceConsoleApp.Amazon
             //options.AddArguments("headless");
             IWebDriver driver = new ChromeDriver(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
             SeleniumHelper helper = new SeleniumHelper();
+            amazonModel = new AmazonModel();
             driver.Navigate().GoToUrl("https://www.amazon.co.uk/");
             SearchBook(isbn, driver, helper);
-            AccessBookFromSearchResults(driver, helper, author);
+            var bookProductPageAcessed = AccessBookFromSearchResults(driver, helper, author);
 
             var averageRating = 0.0;
-
-            var ratingsDictionary = GetCustomerRatingsData(driver, helper);
             int fiveStarRatingPercentage = 0;
             int fourStarRatingPercentage = 0;
             int threeStarRatingPercentage = 0;
             int twoStarRatingPercentage = 0;
             int oneStarRatingPercentage = 0;
-            if (ratingsDictionary != null) {
-                ratingsDictionary.TryGetValue("fiveStar", out  fiveStarRatingPercentage);
-                ratingsDictionary.TryGetValue("fourStar", out  fourStarRatingPercentage);
-                ratingsDictionary.TryGetValue("threeStar", out  threeStarRatingPercentage);
-                ratingsDictionary.TryGetValue("twoStar", out  twoStarRatingPercentage);
-                ratingsDictionary.TryGetValue("oneStar", out  oneStarRatingPercentage);
-                averageRating = CalculateAverageRating(oneStarRatingPercentage, twoStarRatingPercentage, threeStarRatingPercentage, fourStarRatingPercentage, fiveStarRatingPercentage);
-            }
-            
-            var reviewsCount = GetReviewsCount(driver);
-            var reviews = GetReviews(driver);
 
-            amazonModel = new AmazonModel();
-            if (ratingsDictionary != null) {
+            if (bookProductPageAcessed.Equals(false))
+            {
                 amazonModel.AverageRating = averageRating;
                 amazonModel.FiveStarRatingPercentage = fiveStarRatingPercentage;
                 amazonModel.FourStarRatingPercentage = fourStarRatingPercentage;
                 amazonModel.ThreeStarRatingPercentage = threeStarRatingPercentage;
                 amazonModel.TwoStarRatingPercentage = twoStarRatingPercentage;
                 amazonModel.OneStarRatingPercentage = oneStarRatingPercentage;
+                amazonModel.Reviews = new List<string>();
             }
+            else
+            {
+                var ratingsDictionary = GetCustomerRatingsData(driver, helper);
 
-            if (reviews != null) {
-                amazonModel.Reviews = reviews;
+                if (ratingsDictionary != null)
+                {
+                    ratingsDictionary.TryGetValue("fiveStar", out fiveStarRatingPercentage);
+                    ratingsDictionary.TryGetValue("fourStar", out fourStarRatingPercentage);
+                    ratingsDictionary.TryGetValue("threeStar", out threeStarRatingPercentage);
+                    ratingsDictionary.TryGetValue("twoStar", out twoStarRatingPercentage);
+                    ratingsDictionary.TryGetValue("oneStar", out oneStarRatingPercentage);
+                    averageRating = CalculateAverageRating(oneStarRatingPercentage, twoStarRatingPercentage, threeStarRatingPercentage, fourStarRatingPercentage, fiveStarRatingPercentage);
+                }
+
+                var reviewsCount = GetReviewsCount(driver);
+                var reviews = GetReviews(driver);
+
+
+                if (ratingsDictionary != null)
+                {
+                    amazonModel.AverageRating = averageRating;
+                    amazonModel.FiveStarRatingPercentage = fiveStarRatingPercentage;
+                    amazonModel.FourStarRatingPercentage = fourStarRatingPercentage;
+                    amazonModel.ThreeStarRatingPercentage = threeStarRatingPercentage;
+                    amazonModel.TwoStarRatingPercentage = twoStarRatingPercentage;
+                    amazonModel.OneStarRatingPercentage = oneStarRatingPercentage;
+                }
+
+                if (reviews != null)
+                {
+                    amazonModel.Reviews = reviews;
+                }
+                else {
+                    amazonModel.Reviews = new List<string>();
+                }
+                amazonModel.ReviewCount = reviewsCount;
+                driver.Quit();
             }
-
-            amazonModel.ReviewCount = reviewsCount;
-            driver.Quit();
             return amazonModel;
         }
 
@@ -166,19 +186,21 @@ namespace KoobookServiceConsoleApp.Amazon
         //I selected the result which contains the author that was retrived from the Googlebooks/Goodreads sources
         //to ensure that this solution doesnt click on the incorrect result item which leads to collecting information about 
         // a different book. 
-        private void AccessBookFromSearchResults(IWebDriver driver, SeleniumHelper helper, String author)
+        private bool AccessBookFromSearchResults(IWebDriver driver, SeleniumHelper helper, String author)
         {
             try
             {
                 var searchResults = helper.WaitForElementsToBeVisible(driver, By.ClassName("s-result-list"))[0];
-                var searchResultItems = searchResults.FindElements(By.ClassName("s-result-item"));
+                var searchResultItems = searchResults.FindElements(By.ClassName("s-result-item")).ToList();
                 var targetResultItem = searchResultItems.Where(item => item.Text.Contains(author)).First();
                 var targetResultThumbnailImage = targetResultItem.FindElement(By.ClassName("s-image-fixed-height"));
                 targetResultThumbnailImage.Click();
+                return true;
             }
          
             catch (Exception e) {
                 driver.Quit();
+                return false;
             }
         }
 

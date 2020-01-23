@@ -20,7 +20,7 @@ namespace KoobookServiceConsoleApp.Helper
 
         public List<IWebElement> WaitForElementsToBeVisible(IWebDriver driver, By by)
         {
-            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(20));
+            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
             var elements = wait.Until(ExpectedConditions.VisibilityOfAllElementsLocatedBy(by));
             return elements.ToList();
         }

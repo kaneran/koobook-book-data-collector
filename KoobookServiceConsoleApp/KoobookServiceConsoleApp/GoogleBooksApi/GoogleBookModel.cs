@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using static Google.Apis.Books.v1.Data.Volume.VolumeInfoData;
 
 namespace KoobookServiceConsoleApp.GoolgeBooksApi
 {
@@ -52,6 +53,14 @@ namespace KoobookServiceConsoleApp.GoolgeBooksApi
             get;
             set;
         }
+
+        public string Isbn
+        {
+            get;
+            set;
+        }
+
+        public List<IndustryIdentifiersData> IndustryIdentifiersDatas { get; set; }
 
     }
 

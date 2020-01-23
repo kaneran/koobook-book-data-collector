@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -17,7 +18,9 @@ namespace KoobookServiceConsoleApp
         {
 
             TCPServer server = new TCPServer();
-            server.Listen();
+            var fileName = Assembly.GetExecutingAssembly().Location;
+            server.Listen(fileName);
+
             //BookDataController bookDataController = new BookDataController();
             //bookDataController.CollectDataFromSources("9780007354771");
             //var x = bookDataController.ConcatBookData();

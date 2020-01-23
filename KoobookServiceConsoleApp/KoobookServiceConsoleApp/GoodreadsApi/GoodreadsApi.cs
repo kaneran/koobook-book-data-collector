@@ -18,11 +18,22 @@ namespace KoobookServiceConsoleApp.GoodReadsApi
             client = GoodreadsClient.Create(apiKey, apiSecret);
         }
 
-        public async Task<Book> Search(string isbn) {
+        //If the isbn retrieved from the GoogleBookModel reutrns null then get the Goodreads api to get the book based on title as an attempt to find the book.
+        public async Task<Book> SearchByIsbn(string data) {
             BookDataController bookDataController = new BookDataController();
-            var book = await client.Books.GetByIsbn(isbn);
-            return book;
+            if (!String.IsNullOrEmpty(data))
+            {
+                var book = await client.Books.GetByIsbn(data);
+                return book;
+            }
+            else {
+                var book = await client.Books.GetByTitle(data);
+                return book;
+            }
+            
         }
+
+
 
         public GoodreadsModel CollectDataForBook(Book book) {
             goodreadsModel = new GoodreadsModel() {

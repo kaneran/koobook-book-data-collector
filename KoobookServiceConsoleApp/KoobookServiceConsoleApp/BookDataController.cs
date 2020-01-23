@@ -17,52 +17,123 @@ namespace KoobookServiceConsoleApp
     {
         public string MyProperty { get; set; }
         public BookModel bookModel;
-        public async void CollectDataFromSources(string isbn)
+        GoogleBookModel googleBookModel;
+        string googleBooksApiKey;
+        GoogleBookApi googleBookApi;
+        string goodreadsApiKey;
+        string goodreadsApiSecret;
+        GoodreadsApi goodreadsApi;
+        TCPServer server;
+        Task<Book> task;
+
+        public BookDataController()
+        {
+            googleBooksApiKey = ConfigurationManager.AppSettings.Get("googleBooksApiKey");
+            googleBookApi = new GoogleBookApi(googleBooksApiKey);
+            goodreadsApiKey = ConfigurationManager.AppSettings.Get("goodreadsApiKey");
+            goodreadsApiSecret = ConfigurationManager.AppSettings.Get("goodreadsApiSecret");
+            goodreadsApi = new GoodReadsApi.GoodreadsApi(goodreadsApiKey, goodreadsApiSecret);
+        }
+        public async void CollectDataFromSources(string data)
         {
             bookModel = new BookModel();
+            server = new TCPServer();
 
-            var goodreadsApiKey = ConfigurationManager.AppSettings.Get("goodreadsApiKey");
-            var goodreadsApiSecret = ConfigurationManager.AppSettings.Get("goodreadsApiSecret");
-            GoodreadsApi goodreadsApi = new GoodReadsApi.GoodreadsApi(goodreadsApiKey, goodreadsApiSecret);
-            Task<Book> task = goodreadsApi.Search(isbn);
+
+            //If the data doesnt contain the isbn then the isbn will be initially retrieved
+            //from the google books api which is then passed into the good reads api solution
+            var dataContainsIsbn = data.All(char.IsDigit);
+
+            if (dataContainsIsbn.Equals(false))
+            {
+                googleBookModel = googleBookApi.CollectDataForBook(data);
+                var isbn = GetIsbn(googleBookModel);
+                task = goodreadsApi.SearchByIsbn(isbn);
+            }
+            else
+            {
+                googleBookModel = googleBookApi.CollectDataForBook(data);
+                task = goodreadsApi.SearchByIsbn(data);
+            }
+
             task.Wait();
             var book = task.Result;
-            var goodreadsBookData = goodreadsApi.CollectDataForBook(book);
+            var goodreadsModel = goodreadsApi.CollectDataForBook(book);
 
-            var googleBooksApiKey = ConfigurationManager.AppSettings.Get("googleBooksApiKey");
-            GoogleBookApi googleBookApi = new GoogleBookApi(googleBooksApiKey);
-            var googleBooksBookData = googleBookApi.CollectDataForBook(isbn);
-
-            SetDescription(goodreadsBookData, googleBooksBookData);
+            SetDescription(goodreadsModel, googleBookModel);
 
             AmazonWebScraper amazonWebScraper = new AmazonWebScraper();
             AmazonModel amazonBookData = null;
 
-            if (!String.IsNullOrEmpty(goodreadsBookData.Authors.First().ToString()))
+            if (!String.IsNullOrEmpty(goodreadsModel.Authors.First().ToString()))
             {
-                amazonBookData = amazonWebScraper.CollectDataForBook(isbn, goodreadsBookData.Authors.First().Name);
+                amazonBookData = amazonWebScraper.CollectDataForBook(data, goodreadsModel.Authors.First().Name);
             }
-            else if (!String.IsNullOrEmpty(googleBooksBookData.Authors.First()))
+            else if (!String.IsNullOrEmpty(googleBookModel.Authors.First()))
             {
-                amazonBookData = amazonWebScraper.CollectDataForBook(isbn, googleBooksBookData.Authors.First());
+                amazonBookData = amazonWebScraper.CollectDataForBook(data, googleBookModel.Authors.First());
             }
 
-            
-            SetBookTitle(goodreadsBookData, googleBooksBookData);
-            SetAuthorsOfBook(goodreadsBookData, googleBooksBookData);
-            
-            SetAverageRatings(goodreadsBookData, googleBooksBookData, amazonBookData);
-            SetPageCount(goodreadsBookData, googleBooksBookData);
+
+            SetBookTitle(goodreadsModel, googleBookModel);
+            SetAuthorsOfBook(goodreadsModel, googleBookModel);
+
+            SetAverageRatings(goodreadsModel, googleBookModel, amazonBookData);
+            SetPageCount(goodreadsModel, googleBookModel);
             SetAmazonRatings(amazonBookData);
             SetAmazonReviews(amazonBookData);
             SetReviewCount(amazonBookData);
-            SetGenres(googleBooksBookData);
-            SetSubtitle(googleBooksBookData);
-            SetIsbn(goodreadsBookData, isbn);
-            SetThumbnailUrl(googleBooksBookData);
+            SetGenres(googleBookModel);
+            SetSubtitle(googleBookModel);
+            SetIsbn(goodreadsModel, googleBookModel, data);
+            SetThumbnailUrl(googleBookModel);
         }
-        //Each data attribute is separte by "$"
-        public string ConcatBookData() {
+
+        public string ConcatBooksData(List<GoogleBookModel> books)
+        {
+            //Loop through each author and add it to the string builder and is split by the "#" symbol
+            String authorsString = "";
+            StringBuilder sb = new StringBuilder();
+
+
+
+            foreach (var book in books)
+            {
+
+
+                Append(sb, book.Title, "$");
+                string isbn = GetIsbn(book);
+                Append(sb, isbn, "$");
+
+                if (book.Authors.Count > 1)
+                {
+                    for (int i = 0; i < book.Authors.Count; i++)
+                    {
+                        Append(sb, book.Authors[i], "#");
+
+                    }
+                    sb.Append("$");
+
+                }
+                else
+                {
+                    Append(sb, book.Authors.First(), "$");
+                }
+
+                Append(sb, book.ThumbnailUrl, "|");
+            }
+
+            return sb.ToString();
+        }
+
+        private static string GetIsbn(GoogleBookModel book)
+        {
+            return book.IndustryIdentifiersDatas.Where(iid => iid.Type.Equals("ISBN_13")).Select(d => d.Identifier).SingleOrDefault();
+        }
+
+        //Each data attribute is separated by "$"
+        public string ConcatBookData()
+        {
             try
             {
 
@@ -95,19 +166,26 @@ namespace KoobookServiceConsoleApp
                 Append(sb, bookModel.AmazonTwoStarRatingPercentage.ToString(), "$");
                 Append(sb, bookModel.AmazonOneStarRatingPercentage.ToString(), "$");
 
-                if (bookModel.AmazonReviews.Count > 1)
+                if (!(bookModel.AmazonReviews.Count == 0))
                 {
-                    for (int i = 0; i < bookModel.AmazonReviews.Count; i++)
+                    if (bookModel.AmazonReviews.Count > 1)
                     {
-                        Append(sb, bookModel.AmazonReviews[i], "#");
+                        for (int i = 0; i < bookModel.AmazonReviews.Count; i++)
+                        {
+                            Append(sb, bookModel.AmazonReviews[i], "#");
+
+                        }
+                        sb.Append("$");
 
                     }
-                    sb.Append("$");
+                    else
+                    {
+                        Append(sb, bookModel.AmazonReviews.First(), "$");
+                    }
 
                 }
-                else
-                {
-                    Append(sb, bookModel.AmazonReviews.First(), "$");
+                else {
+                    Append(sb, "*", "$");
                 }
 
                 Append(sb, bookModel.AmazonReviewsCount.ToString(), "$");
@@ -122,50 +200,61 @@ namespace KoobookServiceConsoleApp
                     sb.Append("$");
 
                 }
-                else if(bookModel.Genres.Count == 1)
+                else if (bookModel.Genres.Count == 1)
                 {
                     Append(sb, bookModel.Genres.First(), "$");
                 }
-                
+
 
                 Append(sb, bookModel.PageCount.ToString(), "$");
                 Append(sb, bookModel.ThumbnailUrl.ToString(), "$");
                 return sb.ToString();
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 var msg = e.Message;
                 return null;
             }
         }
 
         //If the string is empty then write a "*". This makes it easier to know which strings were empty when the android application decodes it
-        public void Append(StringBuilder sb, string s, string writeChar="") {
+        public void Append(StringBuilder sb, string s, string writeChar = "")
+        {
             if (!String.IsNullOrEmpty(s))
             {
                 sb.Append(s + writeChar);
             }
-            else {
+            else
+            {
                 sb.Append("*" + writeChar);
             }
 
         }
 
-        public void SetThumbnailUrl(GoogleBookModel googleBooksBookData) {
+        public void SetThumbnailUrl(GoogleBookModel googleBooksBookData)
+        {
             if (!String.IsNullOrEmpty(googleBooksBookData.ThumbnailUrl))
             {
                 bookModel.ThumbnailUrl = googleBooksBookData.ThumbnailUrl;
             }
-            else {
+            else
+            {
                 bookModel.ThumbnailUrl = "";
             }
         }
-        private void SetIsbn(GoodreadsModel goodreadsBookData, string retrievedIsbn)
+        private void SetIsbn(GoodreadsModel goodreadsBookData, GoogleBookModel googleBookModel, string retrievedIsbn)
         {
             if (!String.IsNullOrEmpty(goodreadsBookData.Isbn))
             {
                 bookModel.Isbn = goodreadsBookData.Isbn;
             }
-            else {
+            else if (!String.IsNullOrEmpty(GetIsbn(googleBookModel)))
+            {
+
+                bookModel.Isbn = GetIsbn(googleBookModel);
+            }
+            else
+            {
                 bookModel.Isbn = retrievedIsbn;
             }
         }
@@ -180,8 +269,8 @@ namespace KoobookServiceConsoleApp
 
         private void SetGenres(GoogleBookModel googleBooksBookData)
         {
-                bookModel.Genres = googleBooksBookData.Genres;
-            
+            bookModel.Genres = googleBooksBookData.Genres;
+
         }
 
         private void SetReviewCount(AmazonModel amazonBookData)
@@ -190,6 +279,9 @@ namespace KoobookServiceConsoleApp
             {
                 bookModel.AmazonReviewsCount = amazonBookData.ReviewCount;
             }
+            else {
+                bookModel.AmazonReviewsCount = 0;
+            }
         }
 
         private void SetAmazonReviews(AmazonModel amazonBookData)
@@ -197,6 +289,9 @@ namespace KoobookServiceConsoleApp
             if (amazonBookData.Reviews.Count != 0)
             {
                 bookModel.AmazonReviews = amazonBookData.Reviews;
+            }
+            else {
+                bookModel.AmazonReviews = new List<string>();
             }
         }
 
@@ -223,7 +318,7 @@ namespace KoobookServiceConsoleApp
             {
                 bookModel.PageCount = googleBooksBookData.PageCount;
             }
-            
+
         }
 
         private void SetAverageRatings(GoodreadsModel goodreadsBookData, GoolgeBooksApi.GoogleBookModel googleBooksBookData, AmazonModel amazonBookData)
@@ -254,13 +349,15 @@ namespace KoobookServiceConsoleApp
                     summarisedBookDescription = SummariseDescription(goodreadsBookData.Description);
                     bookModel.Description = summarisedBookDescription;
                 }
-                else {
+                else
+                {
                     summarisedBookDescription = SummariseDescription(googleBooksBookData.Description);
                     bookModel.Description = summarisedBookDescription;
                 }
-                
+
             }
-            else {
+            else
+            {
                 if (!String.IsNullOrEmpty(goodreadsBookData.Description))
                 {
                     summarisedBookDescription = SummariseDescription(goodreadsBookData.Description);
@@ -303,18 +400,22 @@ namespace KoobookServiceConsoleApp
             {
                 bookModel.Title = googleBooksBookData.Title;
             }
-            
+
         }
 
         //To provide a way for the server to know that the entire book description has been retrieved, the "#" will be used to mark the end of the string
-        public string SummariseDescription(string bookDescription) {
+        public string SummariseDescription(string bookDescription)
+        {
             TCPClient client = new TCPClient();
             string summarisedBookDescription = "";
             summarisedBookDescription = client.Connect(bookDescription);
-            while (String.IsNullOrEmpty(summarisedBookDescription)){
+            while (String.IsNullOrEmpty(summarisedBookDescription))
+            {
                 //Do nothing
             }
             return summarisedBookDescription;
         }
+
+
     }
 }
