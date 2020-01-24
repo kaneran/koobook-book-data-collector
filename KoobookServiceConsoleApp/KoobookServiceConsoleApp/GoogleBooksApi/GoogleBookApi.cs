@@ -1,4 +1,5 @@
 ﻿using Google.Apis.Books.v1;
+using Google.Apis.Books.v1.Data;
 using Google.Apis.Services;
 using KoobookServiceConsoleApp.GoolgeBooksApi;
 using System;
@@ -64,19 +65,35 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
                 listQuery.MaxResults = count;
                 listQuery.StartIndex = offset;
                 var result = listQuery.Execute();
-                var books = result.Items.Select(book => new GoogleBookModel()
-                {
-                    Title = (string)HandleNull(book.VolumeInfo.Title, DataType.String),
-                    Authors = (List<string>)HandleNull(book.VolumeInfo.Authors, DataType.StringList),
-                    ThumbnailUrl = (string)HandleNull(book.VolumeInfo.ImageLinks.SmallThumbnail, DataType.String),
-                    IndustryIdentifiersDatas = (List<IndustryIdentifiersData>)HandleNull(book.VolumeInfo.IndustryIdentifiers, DataType.IndustryIdentifiersDataList)
-                }).ToList();
-                return new Tuple<int?, List<GoogleBookModel>>(result.TotalItems, books);
+                var bookList = GetBookListFromResults(result);
+                return new Tuple<int?, List<GoogleBookModel>>(result.TotalItems, bookList);
             }
             catch (Exception e)
             {
                 return null;
             }
+        }
+
+        //This method will filter out the book results such that only the books where all the needed fields are non-null are returned such that it can be used to create a book list without encoutering any errors
+        private List<GoogleBookModel> GetBookListFromResults(Volumes results)
+        {
+            List<GoogleBookModel> books = new List<GoogleBookModel>();
+            foreach (var book in results.Items) {
+                GoogleBookModel googleBookModel = new GoogleBookModel();
+                try
+                {
+                    googleBookModel.Title = (string)HandleNull(book.VolumeInfo.Title, DataType.String);
+                    googleBookModel.Authors = (List<string>)HandleNull(book.VolumeInfo.Authors, DataType.StringList);
+                    googleBookModel.ThumbnailUrl = (string)HandleNull(book.VolumeInfo.ImageLinks.SmallThumbnail, DataType.String);
+                    googleBookModel.IndustryIdentifiersDatas = (List<IndustryIdentifiersData>)HandleNull(book.VolumeInfo.IndustryIdentifiers, DataType.IndustryIdentifiersDataList);
+                    books.Add(googleBookModel);
+                }
+                catch (Exception e) {
+                    //Don't add that book to the list cause on the data attributes were null
+                }
+            }
+
+            return books;
         }
 
         public GoogleBookModel CollectDataForBook(string isbn)
@@ -138,35 +155,40 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
             var booksWithIsbn = books.Where(b => !String.IsNullOrEmpty(b.IndustryIdentifiersDatas.Where(iid => iid.Type.Equals("ISBN_13")).Select(iid => iid.Identifier).SingleOrDefault())).ToList();
             return booksWithIsbn;
         }
-     
 
-public Object HandleNull(Object obj, DataType dataType)
-{
-    if (obj == null)
-    {
-        if (dataType.Equals(DataType.Int))
-            return 0;
-        else if (dataType.Equals(DataType.String))
-            return "";
-        else if (dataType.Equals(DataType.Double))
-            return (double)0;
 
-        else if (dataType.Equals(DataType.StringList))
-            return new List<string>();
+        public Object HandleNull(Object obj, DataType dataType)
+        {
+            if (obj == null)
+            {
+                if (dataType.Equals(DataType.Int))
+                    return 0;
+                else if (dataType.Equals(DataType.String))
+                    return "";
+                else if (dataType.Equals(DataType.Double))
+                    return (double)0;
 
-        else
-            return new List<IndustryIdentifiersData>();
+                else if (dataType.Equals(DataType.StringList))
+                    return new List<string>();
+
+                else if (dataType.Equals(DataType.IndustryIdentifiersDataList))
+                    return new List<IndustryIdentifiersData>();
+
+                else
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                return obj;
+            }
+        }
+
+        public enum DataType
+        {
+            String, Int, StringList, Double, IndustryIdentifiersDataList
+        }
+
     }
-    else
-    {
-        return obj;
-    }
-}
-
-public enum DataType
-{
-    String, Int, StringList, Double, IndustryIdentifiersDataList
-}
-
-}
 }

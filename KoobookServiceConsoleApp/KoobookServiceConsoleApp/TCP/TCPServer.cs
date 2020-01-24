@@ -180,6 +180,8 @@ namespace KoobookServiceConsoleApp.TCP
                     }
                     bookDataSentToAndroid = true;
                     client.Close();
+
+                    Thread.Sleep(3000);
                     System.Diagnostics.Process.Start(fileName);
                     Environment.Exit(0);
 
