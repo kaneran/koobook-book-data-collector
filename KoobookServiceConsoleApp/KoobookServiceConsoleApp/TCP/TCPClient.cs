@@ -15,7 +15,7 @@ namespace KoobookServiceConsoleApp.TCP
             string summarisedBookDescription = null;
             try
             {
-                string server = "192.168.1.252";
+                string server = "10.209.141.166";
                 Int32 port = 9877;
                 TcpClient client = new TcpClient(server, port);
 
