@@ -12,8 +12,8 @@ namespace KoobookServiceConsoleApp.Helper
     {
 
         //Explicit wait, credit to Anuja J from https://stackoverflow.com/questions/20077860/selenium-webdriver-explicit-wait for the solution
-        public IWebElement WaitForElementToBeClickable(IWebDriver driver, By by) {
-            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(20));
+        public IWebElement WaitForElementToBeClickable(IWebDriver driver, By by, int time) {
+            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(time));
             var element = wait.Until(ExpectedConditions.ElementToBeClickable(by));   
             return element;
         }

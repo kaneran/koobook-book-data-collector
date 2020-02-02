@@ -58,21 +58,19 @@ namespace KoobookServiceConsoleApp
 
             task.Wait();
             var book = task.Result;
-            var goodreadsModel = goodreadsApi.CollectDataForBook(book);
+            GoodreadsModel goodreadsModel = null;
+            if (book != null)
+            {
+                goodreadsModel = goodreadsApi.CollectDataForBook(book);
+            }
 
             SetDescription(goodreadsModel, googleBookModel);
 
             AmazonWebScraper amazonWebScraper = new AmazonWebScraper();
             AmazonModel amazonBookData = null;
 
-            if (!String.IsNullOrEmpty(goodreadsModel.Authors.First().ToString()))
-            {
-                amazonBookData = amazonWebScraper.CollectDataForBook(data, goodreadsModel.Authors.First().Name);
-            }
-            else if (!String.IsNullOrEmpty(googleBookModel.Authors.First()))
-            {
-                amazonBookData = amazonWebScraper.CollectDataForBook(data, googleBookModel.Authors.First());
-            }
+            amazonBookData = amazonWebScraper.CollectDataForBook(data, goodreadsModel.Authors.First().Name);
+               
 
 
             SetBookTitle(goodreadsModel, googleBookModel);
@@ -105,19 +103,28 @@ namespace KoobookServiceConsoleApp
                 string isbn = GetIsbn(book);
                 Append(sb, isbn, "$");
 
-                if (book.Authors.Count > 1)
+                if (book.Authors.Count != 0)
                 {
-                    for (int i = 0; i < book.Authors.Count; i++)
+                    if (book.Authors.Count > 1)
                     {
-                        Append(sb, book.Authors[i], "#");
+                        for (int i = 0; i < book.Authors.Count; i++)
+                        {
+                            Append(sb, book.Authors[i], "#");
+
+                        }
+                        sb.Append("$");
 
                     }
-                    sb.Append("$");
+                    else
+                    {
+                        Append(sb, book.Authors.First(), "$");
+                    }
+
 
                 }
                 else
                 {
-                    Append(sb, book.Authors.First(), "$");
+                    Append(sb, null, "$");
                 }
 
                 Append(sb, book.ThumbnailUrl, "|");
@@ -184,7 +191,8 @@ namespace KoobookServiceConsoleApp
                     }
 
                 }
-                else {
+                else
+                {
                     Append(sb, "*", "$");
                 }
 
@@ -233,51 +241,90 @@ namespace KoobookServiceConsoleApp
 
         public void SetThumbnailUrl(GoogleBookModel googleBooksBookData)
         {
-            if (!String.IsNullOrEmpty(googleBooksBookData.ThumbnailUrl))
+            if (googleBooksBookData != null)
             {
-                bookModel.ThumbnailUrl = googleBooksBookData.ThumbnailUrl;
-            }
-            else
-            {
-                bookModel.ThumbnailUrl = "";
+                if (!String.IsNullOrEmpty(googleBooksBookData.ThumbnailUrl))
+                {
+                    bookModel.ThumbnailUrl = googleBooksBookData.ThumbnailUrl;
+                }
             }
         }
         private void SetIsbn(GoodreadsModel goodreadsBookData, GoogleBookModel googleBookModel, string retrievedIsbn)
         {
-            if (!String.IsNullOrEmpty(goodreadsBookData.Isbn))
-            {
-                bookModel.Isbn = goodreadsBookData.Isbn;
-            }
-            else if (!String.IsNullOrEmpty(GetIsbn(googleBookModel)))
+            if (googleBookModel != null && goodreadsBookData != null)
             {
 
-                bookModel.Isbn = GetIsbn(googleBookModel);
+                if (!String.IsNullOrEmpty(goodreadsBookData.Isbn))
+                {
+                    bookModel.Isbn = goodreadsBookData.Isbn;
+                }
+                else if (!String.IsNullOrEmpty(GetIsbn(googleBookModel)))
+                {
+
+                    bookModel.Isbn = GetIsbn(googleBookModel);
+                }
+                else
+                {
+                    bookModel.Isbn = retrievedIsbn;
+                }
             }
-            else
-            {
-                bookModel.Isbn = retrievedIsbn;
+            else {
+                if (googleBookModel != null)
+                {
+                    if (!String.IsNullOrEmpty(GetIsbn(googleBookModel)))
+                    {
+                        bookModel.Isbn = GetIsbn(googleBookModel);
+                    }
+                }
+                else if (goodreadsBookData != null)
+                {
+                    if (!String.IsNullOrEmpty(goodreadsBookData.Isbn))
+                    {
+                        bookModel.Isbn = goodreadsBookData.Isbn;
+                    }
+                }
+                else {
+                    bookModel.Isbn = retrievedIsbn;
+                }
             }
         }
 
         private void SetSubtitle(GoogleBookModel googleBooksBookData)
         {
-            if (!String.IsNullOrEmpty(googleBooksBookData.Subtitle))
+            if (googleBooksBookData != null)
             {
-                bookModel.Subtitle = googleBooksBookData.Subtitle;
+                if (!String.IsNullOrEmpty(googleBooksBookData.Subtitle))
+                {
+                    bookModel.Subtitle = googleBooksBookData.Subtitle;
+                }
             }
         }
 
         private void SetGenres(GoogleBookModel googleBooksBookData)
         {
-            bookModel.Genres = googleBooksBookData.Genres;
+            if (googleBooksBookData != null)
+            {
+                bookModel.Genres = googleBooksBookData.Genres;
+            }
+            else {
+                bookModel.Genres = new List<string>();
+            }
+            
 
         }
 
         private void SetReviewCount(AmazonModel amazonBookData)
         {
-            if (amazonBookData.ReviewCount != 0)
+            if (amazonBookData != null)
             {
-                bookModel.AmazonReviewsCount = amazonBookData.ReviewCount;
+                if (amazonBookData.ReviewCount != 0)
+                {
+                    bookModel.AmazonReviewsCount = amazonBookData.ReviewCount;
+                }
+                else
+                {
+                    bookModel.AmazonReviewsCount = 0;
+                }
             }
             else {
                 bookModel.AmazonReviewsCount = 0;
@@ -286,9 +333,16 @@ namespace KoobookServiceConsoleApp
 
         private void SetAmazonReviews(AmazonModel amazonBookData)
         {
-            if (amazonBookData.Reviews.Count != 0)
+            if (amazonBookData != null)
             {
-                bookModel.AmazonReviews = amazonBookData.Reviews;
+                if (amazonBookData.Reviews.Count != 0)
+                {
+                    bookModel.AmazonReviews = amazonBookData.Reviews;
+                }
+                else
+                {
+                    bookModel.AmazonReviews = new List<string>();
+                }
             }
             else {
                 bookModel.AmazonReviews = new List<string>();
@@ -297,108 +351,213 @@ namespace KoobookServiceConsoleApp
 
         private void SetAmazonRatings(AmazonModel amazonBookData)
         {
-            if (amazonBookData.AverageRating != 0)
+            if (amazonBookData != null)
             {
-                bookModel.AmazonFiveStarRatingPercentage = amazonBookData.FiveStarRatingPercentage;
-                bookModel.AmazonFourStarRatingPercentage = amazonBookData.FourStarRatingPercentage;
-                bookModel.AmazonThreeStarRatingPercentage = amazonBookData.ThreeStarRatingPercentage;
-                bookModel.AmazonTwoStarRatingPercentage = amazonBookData.TwoStarRatingPercentage;
-                bookModel.AmazonOneStarRatingPercentage = amazonBookData.OneStarRatingPercentage;
-                bookModel.AmazonAverageRating = amazonBookData.AverageRating;
+                if (amazonBookData.AverageRating != 0)
+                {
+                    bookModel.AmazonFiveStarRatingPercentage = amazonBookData.FiveStarRatingPercentage;
+                    bookModel.AmazonFourStarRatingPercentage = amazonBookData.FourStarRatingPercentage;
+                    bookModel.AmazonThreeStarRatingPercentage = amazonBookData.ThreeStarRatingPercentage;
+                    bookModel.AmazonTwoStarRatingPercentage = amazonBookData.TwoStarRatingPercentage;
+                    bookModel.AmazonOneStarRatingPercentage = amazonBookData.OneStarRatingPercentage;
+                    bookModel.AmazonAverageRating = amazonBookData.AverageRating;
+                }
             }
         }
 
         private void SetPageCount(GoodreadsModel goodreadsBookData, GoolgeBooksApi.GoogleBookModel googleBooksBookData)
         {
-            if (goodreadsBookData.PageCount != null)
+            if (goodreadsBookData != null && googleBooksBookData != null)
             {
-                bookModel.PageCount = goodreadsBookData.PageCount;
+                if (goodreadsBookData.PageCount != null)
+                {
+                    bookModel.PageCount = goodreadsBookData.PageCount;
+                }
+                else if (googleBooksBookData.PageCount != 0)
+                {
+                    bookModel.PageCount = googleBooksBookData.PageCount;
+                }
             }
-            else if (googleBooksBookData.PageCount != 0)
+            else
             {
-                bookModel.PageCount = googleBooksBookData.PageCount;
+                if (goodreadsBookData != null)
+                {
+                    if (goodreadsBookData.PageCount != null)
+                    {
+                        bookModel.PageCount = goodreadsBookData.PageCount;
+                    }
+                }
+                else if (googleBooksBookData != null)
+                {
+                    if (googleBooksBookData.PageCount != 0)
+                    {
+                        bookModel.PageCount = googleBooksBookData.PageCount;
+                    }
+                }
             }
 
         }
 
         private void SetAverageRatings(GoodreadsModel goodreadsBookData, GoolgeBooksApi.GoogleBookModel googleBooksBookData, AmazonModel amazonBookData)
         {
-            if (googleBooksBookData.AverageRating != 0)
+            if (googleBooksBookData != null)
             {
-                bookModel.GoogleBooksAverageRating = googleBooksBookData.AverageRating;
+                if (googleBooksBookData.AverageRating != 0)
+                {
+                    bookModel.GoogleBooksAverageRating = googleBooksBookData.AverageRating;
+                }
             }
 
-            if (goodreadsBookData.AverageRating != 0)
+            if (goodreadsBookData != null)
             {
-                bookModel.GoodreadsAverageRating = goodreadsBookData.AverageRating;
+                if (goodreadsBookData.AverageRating != 0)
+                {
+                    bookModel.GoodreadsAverageRating = goodreadsBookData.AverageRating;
+                }
             }
 
-            if (amazonBookData.AverageRating != 0)
+            if (amazonBookData != null)
             {
-                bookModel.GoodreadsAverageRating = amazonBookData.AverageRating;
+                if (amazonBookData.AverageRating != 0)
+                {
+                    bookModel.GoodreadsAverageRating = amazonBookData.AverageRating;
+                }
             }
         }
 
+        //The second outer else statement is to deal with cases where the Goodreads and/or GoogleBooks data is null
         private void SetDescription(GoodreadsModel goodreadsBookData, GoolgeBooksApi.GoogleBookModel googleBooksBookData)
         {
+
             string summarisedBookDescription;
-            if (goodreadsBookData.Description.Length > 0 && googleBooksBookData.Description.Length > 0)
+
+            if (goodreadsBookData != null && googleBooksBookData != null)
             {
-                if (goodreadsBookData.Description.Length > googleBooksBookData.Description.Length)
+                if (goodreadsBookData.Description.Length > 0 && googleBooksBookData.Description.Length > 0)
                 {
-                    summarisedBookDescription = SummariseDescription(goodreadsBookData.Description);
-                    bookModel.Description = summarisedBookDescription;
+                    if (goodreadsBookData.Description.Length > googleBooksBookData.Description.Length)
+                    {
+                        summarisedBookDescription = SummariseDescription(goodreadsBookData.Description);
+                        bookModel.Description = summarisedBookDescription;
+                    }
+                    else
+                    {
+                        summarisedBookDescription = SummariseDescription(googleBooksBookData.Description);
+                        bookModel.Description = summarisedBookDescription;
+                    }
+
                 }
                 else
                 {
-                    summarisedBookDescription = SummariseDescription(googleBooksBookData.Description);
-                    bookModel.Description = summarisedBookDescription;
-                }
+                    if (!String.IsNullOrEmpty(goodreadsBookData.Description))
+                    {
+                        summarisedBookDescription = SummariseDescription(goodreadsBookData.Description);
+                        bookModel.Description = summarisedBookDescription;
+                    }
 
+                    else if (!String.IsNullOrEmpty(googleBooksBookData.Description))
+                    {
+                        summarisedBookDescription = SummariseDescription(googleBooksBookData.Description);
+                        bookModel.Description = summarisedBookDescription;
+                    }
+                }
             }
             else
             {
-                if (!String.IsNullOrEmpty(goodreadsBookData.Description))
+                if (googleBooksBookData != null)
+                {
+                    summarisedBookDescription = SummariseDescription(googleBooksBookData.Description);
+                    bookModel.Description = summarisedBookDescription;
+                }
+                else if (goodreadsApi != null)
                 {
                     summarisedBookDescription = SummariseDescription(goodreadsBookData.Description);
                     bookModel.Description = summarisedBookDescription;
                 }
 
-                else if (!String.IsNullOrEmpty(googleBooksBookData.Description))
-                {
-                    summarisedBookDescription = SummariseDescription(googleBooksBookData.Description);
-                    bookModel.Description = summarisedBookDescription;
-                }
             }
         }
 
         private void SetAuthorsOfBook(GoodreadsModel goodreadsBookData, GoolgeBooksApi.GoogleBookModel googleBooksBookData)
         {
-            if (googleBooksBookData.Authors.Count != 0)
+            if (goodreadsBookData != null && googleBooksBookData != null)
             {
-                bookModel.Authors = googleBooksBookData.Authors;
-            }
-            else if (goodreadsBookData.Authors.Count != 0)
-            {
-                List<string> authors = new List<string>();
-                foreach (var author in goodreadsBookData.Authors)
+                if (googleBooksBookData.Authors.Count != 0)
                 {
-                    authors.Add(author.Name);
+                    bookModel.Authors = googleBooksBookData.Authors;
                 }
-                bookModel.Authors = authors;
+                else if (goodreadsBookData.Authors.Count != 0)
+                {
+                    List<string> authors = new List<string>();
+                    foreach (var author in goodreadsBookData.Authors)
+                    {
+                        authors.Add(author.Name);
+                    }
+                    bookModel.Authors = authors;
+                }
+                else {
+                    bookModel.Authors = new List<string>();
+                }
+            }
+            else
+            {
+                if (googleBooksBookData != null)
+                {
+                    if (googleBooksBookData.Authors.Count != 0)
+                    {
+                        bookModel.Authors = googleBooksBookData.Authors;
+                    }
+                }
+                else if (goodreadsBookData != null)
+                {
+                    if (goodreadsBookData.Authors.Count != 0)
+                    {
+
+                        List<string> authors = new List<string>();
+                        foreach (var author in goodreadsBookData.Authors)
+                        {
+                            authors.Add(author.Name);
+                        }
+                        bookModel.Authors = authors;
+                    }
+                    else {
+                        bookModel.Authors = new List<string>();
+                    }
+
+                }
             }
         }
 
         private void SetBookTitle(GoodreadsModel goodreadsBookData, GoolgeBooksApi.GoogleBookModel googleBooksBookData)
         {
-            if (!String.IsNullOrEmpty(goodreadsBookData.Title))
+            if (goodreadsBookData != null && googleBooksBookData != null)
             {
-                bookModel.Title = goodreadsBookData.Title;
-            }
+                if (!String.IsNullOrEmpty(goodreadsBookData.Title))
+                {
+                    bookModel.Title = goodreadsBookData.Title;
+                }
 
-            else if (!String.IsNullOrEmpty(googleBooksBookData.Title))
+                else if (!String.IsNullOrEmpty(googleBooksBookData.Title))
+                {
+                    bookModel.Title = googleBooksBookData.Title;
+                }
+            }
+            else
             {
-                bookModel.Title = googleBooksBookData.Title;
+                if (googleBooksBookData != null)
+                {
+                    if (!String.IsNullOrEmpty(googleBooksBookData.Title))
+                    {
+                        bookModel.Title = googleBooksBookData.Title;
+                    }
+                }
+                else if (goodreadsBookData != null)
+                {
+                    if (!String.IsNullOrEmpty(goodreadsBookData.Title))
+                    {
+                        bookModel.Title = goodreadsBookData.Title;
+                    }
+                }
             }
 
         }
@@ -408,12 +567,27 @@ namespace KoobookServiceConsoleApp
         {
             TCPClient client = new TCPClient();
             string summarisedBookDescription = "";
-            summarisedBookDescription = client.Connect(bookDescription);
-            while (String.IsNullOrEmpty(summarisedBookDescription))
+            if (!String.IsNullOrEmpty(bookDescription))
             {
-                //Do nothing
+                //Check if description contains more than 15 words
+                if (bookDescription.Split(' ').Count() > 15)
+                {
+                    summarisedBookDescription = client.Connect(bookDescription);
+                    while (String.IsNullOrEmpty(summarisedBookDescription))
+                    {
+                        //Do nothing
+                    }
+                    return summarisedBookDescription;
+                }
+                else {
+                    return bookDescription;
+                }
+
             }
-            return summarisedBookDescription;
+            else {
+                return "";
+            }
+            
         }
 
 

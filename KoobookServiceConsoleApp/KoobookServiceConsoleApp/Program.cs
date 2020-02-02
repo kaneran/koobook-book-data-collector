@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,9 +22,9 @@ namespace KoobookServiceConsoleApp
             var fileName = Assembly.GetExecutingAssembly().Location;
             server.Listen(fileName);
 
-            //BookDataController bookDataController = new BookDataController();
-            //bookDataController.CollectDataFromSources("9780007354771");
-            //var x = bookDataController.ConcatBookData();
+            //AmazonWebScraper amazonWebScraper = new AmazonWebScraper();
+            //amazonWebScraper.CollectDataForBook("9781434227904", "Melinda Melton Crow");
+  
         }
     }
 }

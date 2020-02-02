@@ -21,10 +21,17 @@ namespace KoobookServiceConsoleApp.Amazon
             IWebDriver driver = new ChromeDriver(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
             SeleniumHelper helper = new SeleniumHelper();
             amazonModel = new AmazonModel();
-            driver.Navigate().GoToUrl("https://www.amazon.co.uk/");
-            SearchBook(isbn, driver, helper);
+            driver.Navigate().GoToUrl("https://www.amazon.co.uk/s?k="+isbn+"&ref=nb_sb_noss");
+            //SearchBook(isbn, driver, helper);
             var bookProductPageAcessed = AccessBookFromSearchResults(driver, helper, author);
+            try
+            {
+                var popupCloseButton = helper.WaitForElementToBeClickable(driver, By.ClassName("a-icon-close"),2);
+                popupCloseButton.Click();
+            }
+            catch (Exception e) {
 
+            }
             var averageRating = 0.0;
             int fiveStarRatingPercentage = 0;
             int fourStarRatingPercentage = 0;
@@ -192,7 +199,7 @@ namespace KoobookServiceConsoleApp.Amazon
             {
                 var searchResults = helper.WaitForElementsToBeVisible(driver, By.ClassName("s-result-list"))[0];
                 var searchResultItems = searchResults.FindElements(By.ClassName("s-result-item")).ToList();
-                var targetResultItem = searchResultItems.Where(item => item.Text.Contains(author)).First();
+                var targetResultItem = searchResultItems.First();
                 var targetResultThumbnailImage = targetResultItem.FindElement(By.ClassName("s-image-fixed-height"));
                 targetResultThumbnailImage.Click();
                 return true;
@@ -208,7 +215,7 @@ namespace KoobookServiceConsoleApp.Amazon
         {
             try
             {
-                IWebElement searchBox = helper.WaitForElementToBeClickable(driver, By.Id("twotabsearchtextbox"));
+                IWebElement searchBox = helper.WaitForElementToBeClickable(driver, By.Id("twotabsearchtextbox"),4);
                 searchBox.SendKeys(isbn);
                 searchBox.SendKeys(Keys.Enter);
             }
