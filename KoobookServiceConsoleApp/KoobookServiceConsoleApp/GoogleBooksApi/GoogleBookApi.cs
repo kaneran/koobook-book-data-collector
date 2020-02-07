@@ -57,6 +57,8 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
 
         //This method will query the google books api using the query that was passed
         //in as an arugment and return a tuple of books and its total volumes found count
+        //The reason why this method was created in contrast to the above method is because the level of information per book when the android application requests for information about several books is more breif compared
+        //to when the android application request for information about a single book.
         public Tuple<int?, List<GoogleBookModel>> SearchBooks(string query, int offset, int count)
         {
             try
@@ -75,6 +77,9 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
         }
 
         //This method will filter out the book results such that only the books where all the needed fields are non-null are returned such that it can be used to create a book list without encoutering any errors
+        //This method works by interating through each book from the results(passed into the method's arguments) and creating a new GoogleBookModel instance where it populates its attributes(properties) with the book data
+        //retrieved from the Google book api. If no exception were thrown while populating the attributes then it is added to the list of GoogleBookModels. If an exception is thrown then don't add to that list. After
+        //iterating through each book, the method returns the list of GoogleBooksModel which may be empty. 
         private List<GoogleBookModel> GetBookListFromResults(Volumes results)
         {
             List<GoogleBookModel> books = new List<GoogleBookModel>();
@@ -96,6 +101,8 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
             return books;
         }
 
+        //This method works by querying the Google book api to get book information using the isbn(passed into the method's arguments). It then checks to see if the query returned data. If it did then get the first book
+        //from the results and return it. If the query returning null then it will return a GoogleBookModel with empty attributes. 
         public GoogleBookModel CollectDataForBook(string isbn)
         {
             var bookResults = SearchBook(isbn, 0, 1);
@@ -122,6 +129,9 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
             return googleBookModel;
         }
 
+        //This method works by query the Google books api to get books based on the query string(passed into the method's argument). It then checks to see if the query returned any results. If it did then it will iterating through
+        //each book from the results and add to the initialised list of GoogleBookModels. However, the query only returned one book then just simply add to the list and no need to do a for loop. After doing this, LINQ was used
+        //to filtered the books where it did contain an ISBN number and this filtered list is returned by the method. However, if the query returned nothing then the method will return null.
         public List<GoogleBookModel> CollectDataForBooks(string query)
         {
 
@@ -151,12 +161,19 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
             {
                 books = null;
             }
-            //Get me all the books that actually has a valid book isbn 
-            var booksWithIsbn = books.Where(b => !String.IsNullOrEmpty(b.IndustryIdentifiersDatas.Where(iid => iid.Type.Equals("ISBN_13")).Select(iid => iid.Identifier).SingleOrDefault())).ToList();
-            return booksWithIsbn;
+            if (books != null)
+            {
+                //Get me all the books that actually has a valid book isbn 
+                var booksWithIsbn = books.Where(b => !String.IsNullOrEmpty(b.IndustryIdentifiersDatas.Where(iid => iid.Type.Equals("ISBN_13")).Select(iid => iid.Identifier).SingleOrDefault())).ToList();
+                return booksWithIsbn;
+            }
+            else {
+                return books;
+            }
         }
 
-
+        //This method works by checking if the object(passed into the method's arguments) is null. If it is null then check what the data type(passed into the method's arguments) of the object. If it matches a certain data type
+        //then that data type will be returned by the method. If it didn't match any of the data types then the method will return null. If the object is not null then the method will return that object. 
         public Object HandleNull(Object obj, DataType dataType)
         {
             if (obj == null)
@@ -185,6 +202,7 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
             }
         }
 
+        //This was used to record the data type of a given object such that the HandleNull method can return the most apprproirate value if that object was null. 
         public enum DataType
         {
             String, Int, StringList, Double, IndustryIdentifiersDataList

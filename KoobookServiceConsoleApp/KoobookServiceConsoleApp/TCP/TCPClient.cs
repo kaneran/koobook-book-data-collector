@@ -10,12 +10,17 @@ namespace KoobookServiceConsoleApp.TCP
     //Source: https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.tcpclient?view=netframework-4.8
     class TCPClient
     {
-        public string Connect(string bookDescription) {
+        //This method works by connecting the the Python text summariser via TCP socket. After connecting, it sends the book description(passed into the method's arguments) to the Python text summariser which then summarises it.
+        //After the summariser has completed the summarisation, it then sends it back to the client and waits until it recieves the "#" symbol which is the Python text sumamriser's way of informing the client and this is all
+        //the data that it sent. After the client removes the "#" from the receives data string, the client should now have the summarised book description. It then initiates the partial handshake to close connection. After it
+        //closes connection, it returns the summarised book description. If an exception was thrown during the main execution then the orginal book description(not summarised) will be returned by the method.  
+        public string Connect(string bookDescription)
+        {
 
             string summarisedBookDescription = null;
             try
             {
-                string server = "192.168.1.252";
+                string server = "10.40.55.194";
                 Int32 port = 9878;
                 TcpClient client = new TcpClient(server, port);
 
@@ -28,13 +33,10 @@ namespace KoobookServiceConsoleApp.TCP
 
                 bookDescriptionData = new byte[256];
 
-                
+
                 StringBuilder sb = new StringBuilder();
                 int i;
                 bool dataReceived = false;
-
-
-          
 
 
 
@@ -48,7 +50,7 @@ namespace KoobookServiceConsoleApp.TCP
                         sb.Replace("#", "");
                         break;
                     }
-                    
+
                 }
 
                 summarisedBookDescription = sb.ToString();
@@ -81,15 +83,17 @@ namespace KoobookServiceConsoleApp.TCP
                 client.Close();
                 return summarisedBookDescription;
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 if (!String.IsNullOrEmpty(summarisedBookDescription))
                 {
                     return summarisedBookDescription;
                 }
-                else {
+                else
+                {
                     return bookDescription;
                 }
             }
-            }
+        }
     }
 }

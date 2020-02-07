@@ -86,7 +86,6 @@
   <ItemGroup>
     <Compile Include="Amazon\AmazonModel.cs" />
     <Compile Include="Amazon\AmazonWebScraper.cs" />
-    <Compile Include="Amazon\WebElement.cs" />
     <Compile Include="BookDataController.cs" />
     <Compile Include="BookModel.cs" />
     <Compile Include="GoodreadsApi\GoodreadsApi.cs" />

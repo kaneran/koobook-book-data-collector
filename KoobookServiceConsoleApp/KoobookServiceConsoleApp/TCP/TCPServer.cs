@@ -17,8 +17,17 @@ namespace KoobookServiceConsoleApp.TCP
     {
         public bool dataContainsIsbn { get; set; }
 
-        //This method initialises a port and creates a new TCP listener using that port
-        //it then waits a client connects to it and it accepts it and then proceed to read and write to the client
+        //This method works by initialising a port and creates a new TCP listener using that port. It then waits a client connects to it and it accepts it and then proceeds to read the data sent from the client(android application).
+        //The server will contain to read until the Android application sends the "#" symbol to tell the server that it has received the entire data stirng. After removing the "#" symbol from the retreived data string, it then checks
+        //it to see if the android application requested to retrieve information about one or several books. If the request is to get only one book then it uses the Book Data controller to get all relevent book information from
+        //Goodreads, GoogleBooks and Amazon and the controller should return a single BookModel contaning the information. It then uses this model to concatanate all the information into a single string and sends it back to the android application.
+        //It will also send a sub string "]d2C>^+" to tell the Android application(client) that it has sent all the book information.
+
+        //If the android application requested to retrieve information about several books then it will collect the books data from Google books api and uses the Book controller to concantate all the books data into a single string 
+        //and sends it back to the android application. It will also send a sub string "]d2C>^+" to tell the Android application(client) that it has sent all the book information.
+
+        //After sending the information, it waits until the android application initiates the partial handshake to close connection. After it closes connection, it sleeps for 3 seconds and creates a new console window for the entire process to start again.
+
         //Credit to AWinkle for the idea on how to run tasks simultaneously https://codereview.stackexchange.com/questions/59147/running-2-sets-of-tasks-at-the-same-time
         public void Listen(string fileName)
         {
@@ -54,7 +63,7 @@ namespace KoobookServiceConsoleApp.TCP
                     bool dataFromClientReceived = false;
                     bool ackReceived = false;
 
-                    //Read data from client to receive all the bytes and append it together to prdouce the isbn number
+                    //Read data from client to receive all the bytes and append it together to prdouce the data 
                     while (dataFromClientReceived == false) {
                         i = stream.Read(isbnBytes, 0, isbnBytes.Length);
                         var mData = System.Text.Encoding.ASCII.GetString(isbnBytes, 0, i);

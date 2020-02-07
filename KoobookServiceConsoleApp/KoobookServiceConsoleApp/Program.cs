@@ -21,9 +21,6 @@ namespace KoobookServiceConsoleApp
             TCPServer server = new TCPServer();
             var fileName = Assembly.GetExecutingAssembly().Location;
             server.Listen(fileName);
-
-            //AmazonWebScraper amazonWebScraper = new AmazonWebScraper();
-            //amazonWebScraper.CollectDataForBook("9781434227904", "Melinda Melton Crow");
   
         }
     }
