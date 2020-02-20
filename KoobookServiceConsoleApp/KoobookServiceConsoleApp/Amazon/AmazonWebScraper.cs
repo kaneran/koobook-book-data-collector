@@ -217,7 +217,8 @@ namespace KoobookServiceConsoleApp.Amazon
         {
             try
             {
-                var searchResults = helper.WaitForElementsToBeVisible(driver, By.ClassName("s-result-list"))[0];
+
+                var searchResults = driver.FindElements(By.ClassName("s-result-list"))[1];
                 var searchResultItems = searchResults.FindElements(By.ClassName("s-result-item")).ToList();
                 var targetResultItem = searchResultItems.First();
                 var targetResultThumbnailImage = targetResultItem.FindElement(By.ClassName("s-image-fixed-height"));

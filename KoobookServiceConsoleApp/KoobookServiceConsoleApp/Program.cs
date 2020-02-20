@@ -21,6 +21,9 @@ namespace KoobookServiceConsoleApp
             TCPServer server = new TCPServer();
             var fileName = Assembly.GetExecutingAssembly().Location;
             server.Listen(fileName);
+
+            //AmazonWebScraper amazonWebScraper = new AmazonWebScraper();
+            //amazonWebScraper.CollectDataForBook("9780007354771", "");
   
         }
     }
