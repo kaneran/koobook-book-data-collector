@@ -24,7 +24,9 @@ namespace KoobookServiceConsoleApp
         string goodreadsApiSecret;
         GoodreadsApi goodreadsApi;
         TCPServer server;
-        Task<Book> task;
+        Task<Book> goodreadsTask;
+        Task<GoogleBookModel> googleBookTask;
+        Task<AmazonModel> amazonTask;
 
         public BookDataController()
         {
@@ -45,6 +47,9 @@ namespace KoobookServiceConsoleApp
             bookModel = new BookModel();
             server = new TCPServer();
 
+            AmazonWebScraper amazonWebScraper = new AmazonWebScraper();
+            AmazonModel amazonBookData = null;
+            amazonTask = amazonWebScraper.CollectDataForBook(data);
 
             //If the data doesnt contain the isbn then the isbn will be initially retrieved
             //from the google books api which is then passed into the good reads api solution
@@ -52,32 +57,26 @@ namespace KoobookServiceConsoleApp
 
             if (dataContainsIsbn.Equals(false))
             {
-                googleBookModel = googleBookApi.CollectDataForBook(data);
+                googleBookTask = googleBookApi.CollectDataForBook(data);
                 var isbn = GetIsbn(googleBookModel);
-                task = goodreadsApi.SearchByIsbn(isbn);
+                goodreadsTask = goodreadsApi.SearchByIsbn(isbn);
             }
             else
             {
-                googleBookModel = googleBookApi.CollectDataForBook(data);
-                task = goodreadsApi.SearchByIsbn(data);
+                googleBookTask = googleBookApi.CollectDataForBook(data);
+                goodreadsTask = goodreadsApi.SearchByIsbn(data);
             }
 
-            task.Wait();
-            var book = task.Result;
+            Task.WhenAll(amazonTask,googleBookTask, goodreadsTask);
+            var book = goodreadsTask.Result;
             GoodreadsModel goodreadsModel = null;
             if (book != null)
             {
                 goodreadsModel = goodreadsApi.CollectDataForBook(book);
             }
-
+            googleBookModel = googleBookTask.Result;
+            amazonBookData = amazonTask.Result;
             SetDescription(goodreadsModel, googleBookModel);
-
-            AmazonWebScraper amazonWebScraper = new AmazonWebScraper();
-            AmazonModel amazonBookData = null;
-
-            amazonBookData = amazonWebScraper.CollectDataForBook(data, goodreadsModel.Authors.First().Name);
-               
-
 
             SetBookTitle(goodreadsModel, googleBookModel);
             SetAuthorsOfBook(goodreadsModel, googleBookModel);

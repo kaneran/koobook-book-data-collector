@@ -29,7 +29,7 @@ namespace KoobookServiceConsoleApp.TCP
         //After sending the information, it waits until the android application initiates the partial handshake to close connection. After it closes connection, it sleeps for 3 seconds and creates a new console window for the entire process to start again.
 
         //Credit to AWinkle for the idea on how to run tasks simultaneously https://codereview.stackexchange.com/questions/59147/running-2-sets-of-tasks-at-the-same-time
-        public void Listen(string fileName)
+        public void Listen()
         {
             TcpListener server = null;
             StringBuilder stringBuilder;
@@ -190,10 +190,6 @@ namespace KoobookServiceConsoleApp.TCP
                     bookDataSentToAndroid = true;
                     client.Close();
 
-                    Thread.Sleep(3000);
-                    System.Diagnostics.Process.Start(fileName);
-                    Environment.Exit(0);
-
                 }
             }
             catch (SocketException se)
@@ -206,8 +202,7 @@ namespace KoobookServiceConsoleApp.TCP
                 
             }
 
-            Console.WriteLine("/n enter to continue");
-            Console.Read();
+            Listen();
         }
 
 

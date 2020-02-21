@@ -18,7 +18,7 @@ namespace KoobookServiceConsoleApp.Amazon
         //This method works by using Selenium WebDriver to navigate to Amazon search results url which is appended with the isbn(passed into the method's argument)
         //It then clicks on the first product from the search result which is presumbably the book with the corresponding isbn. It then proceeds to scrap the relevent data including ratings and reviews
         //It then uses the scrapped data to assign it to the AmazonModel instance which is then returned by this method. 
-        public AmazonModel CollectDataForBook(string isbn, string author)
+        public async Task<AmazonModel> CollectDataForBook(string isbn)
         {
             ChromeOptions options = new ChromeOptions();
             //options.AddArguments("headless");
@@ -27,7 +27,7 @@ namespace KoobookServiceConsoleApp.Amazon
             amazonModel = new AmazonModel();
             driver.Navigate().GoToUrl("https://www.amazon.co.uk/s?k="+isbn+"&ref=nb_sb_noss");
             //SearchBook(isbn, driver, helper);
-            var bookProductPageAcessed = AccessBookFromSearchResults(driver, helper, author);
+            var bookProductPageAcessed = AccessBookFromSearchResults(driver, helper);
             try
             {
                 var popupCloseButton = helper.WaitForElementToBeClickable(driver, By.ClassName("a-icon-close"),2);
@@ -213,7 +213,7 @@ namespace KoobookServiceConsoleApp.Amazon
 
         //However, if the initial wiating of the results list times out, this means that there were no results returned and this will thrown an tiemout exception which will be caught. After it's caught, the selenium webdriver will quit and
         //the method returns false. 
-        private bool AccessBookFromSearchResults(IWebDriver driver, SeleniumHelper helper, String author)
+        private bool AccessBookFromSearchResults(IWebDriver driver, SeleniumHelper helper)
         {
             try
             {

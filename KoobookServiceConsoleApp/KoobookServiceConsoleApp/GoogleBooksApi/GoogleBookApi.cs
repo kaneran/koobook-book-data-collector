@@ -103,7 +103,7 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
 
         //This method works by querying the Google book api to get book information using the isbn(passed into the method's arguments). It then checks to see if the query returned data. If it did then get the first book
         //from the results and return it. If the query returning null then it will return a GoogleBookModel with empty attributes. 
-        public GoogleBookModel CollectDataForBook(string isbn)
+        public async Task<GoogleBookModel> CollectDataForBook(string isbn)
         {
             var bookResults = SearchBook(isbn, 0, 1);
             if (bookResults != null)
