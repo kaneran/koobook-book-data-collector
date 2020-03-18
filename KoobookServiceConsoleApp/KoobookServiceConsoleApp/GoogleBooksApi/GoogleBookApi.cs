@@ -134,42 +134,83 @@ namespace KoobookServiceConsoleApp.GoogleBooksApi
         //to filtered the books where it did contain an ISBN number and this filtered list is returned by the method. However, if the query returned nothing then the method will return null.
         public List<GoogleBookModel> CollectDataForBooks(string query)
         {
-
-            List<GoogleBookModel> books = new List<GoogleBookModel>();
-            var bookResults = SearchBooks(query, 1, 12);
-
-            if (bookResults != null)
+            try
             {
-                //If the books results only returns one book then execute the SearchBook method
+                List<GoogleBookModel> books = new List<GoogleBookModel>();
+                var bookResults = SearchBooks(query, 1, 40);
 
-                if (bookResults.Item2.Count > 1)
+                if (bookResults != null)
                 {
+                    //If the books results only returns one book then execute the SearchBook method
 
-                    foreach (var book in bookResults.Item2)
+                    if (bookResults.Item2.Count > 1)
                     {
+
+                        foreach (var book in bookResults.Item2)
+                        {
+                            books.Add(book);
+                        }
+                    }
+                    else if (bookResults.Item2.Count == 1)
+                    {
+                        var bookSearchResult = SearchBook(query, 1, 1);
+                        var book = bookSearchResult.Item2.First();
                         books.Add(book);
                     }
                 }
-                else if (bookResults.Item2.Count == 1)
+                else
                 {
-                    var bookSearchResult = SearchBook(query, 1, 1);
-                    var book = bookSearchResult.Item2.First();
-                    books.Add(book);
+                    books = null;
+                }
+                if (books != null)
+                {
+                    //Get me all the books that actually has a valid book isbn 
+                    var booksWithIsbn = books.Where(b => !String.IsNullOrEmpty(b.IndustryIdentifiersDatas.Where(iid => iid.Type.Equals("ISBN_13")).Select(iid => iid.Identifier).SingleOrDefault())).ToList();
+
+                    var sampleBooks = GetSampleBooks(booksWithIsbn);
+
+                    return sampleBooks;
+                }
+                else
+                {
+                    return books;
                 }
             }
-            else
-            {
-                books = null;
+            catch (Exception e) {
+                var errorMsg = e.Message;
+                return null;
             }
-            if (books != null)
-            {
-                //Get me all the books that actually has a valid book isbn 
-                var booksWithIsbn = books.Where(b => !String.IsNullOrEmpty(b.IndustryIdentifiersDatas.Where(iid => iid.Type.Equals("ISBN_13")).Select(iid => iid.Identifier).SingleOrDefault())).ToList();
-                return booksWithIsbn;
+        }
+
+        //This method works by randomly getting 12 books from the list of books, passed into the method's arguments. 
+        public List<GoogleBookModel> GetSampleBooks(List<GoogleBookModel> books) {
+            Random random = new Random();
+            List<GoogleBookModel> sampleBooksWithIsbn = new List<GoogleBookModel>();
+
+            for (int i = 0; i < 12; i++) {
+                var index = random.Next(0, books.Count-1);
+                try
+                {
+                    var book = books[index];
+
+                    //Check if book already exists in list of sample of books
+
+                    var isbn = book.IndustryIdentifiersDatas.Where(iid => iid.Type.Equals("ISBN_13")).Select(id => id.Identifier).SingleOrDefault();
+                    var duplicateBook = sampleBooksWithIsbn.Where(b => (b.IndustryIdentifiersDatas.Where(iid => iid.Type.Equals("ISBN_13")).Select(iid => iid.Identifier).SingleOrDefault()).Equals(isbn)).SingleOrDefault();
+                    if (duplicateBook == null)
+                    {
+                        sampleBooksWithIsbn.Add(book);
+                    }
+                    else {
+                        //This value was decremented to cancel out subsequent increment of that value. This was done to allow the system to return 13 books and nothing less
+                        i--;
+                    }
+                }
+                catch (IndexOutOfRangeException e) {
+                    //Do nothing 
+                }
             }
-            else {
-                return books;
-            }
+            return sampleBooksWithIsbn;
         }
 
         //This method works by checking if the object(passed into the method's arguments) is null. If it is null then check what the data type(passed into the method's arguments) of the object. If it matches a certain data type
