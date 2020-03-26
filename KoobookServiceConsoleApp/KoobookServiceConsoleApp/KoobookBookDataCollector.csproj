@@ -88,6 +88,7 @@
     <Compile Include="Amazon\AmazonWebScraper.cs" />
     <Compile Include="BookDataController.cs" />
     <Compile Include="BookModel.cs" />
+    <Compile Include="DominantColorWebScraper.cs" />
     <Compile Include="GoodreadsApi\GoodreadsApi.cs" />
     <Compile Include="GoodreadsApi\GoodreadsModel.cs" />
     <Compile Include="GoogleBooksApi\GoogleBookModel.cs" />

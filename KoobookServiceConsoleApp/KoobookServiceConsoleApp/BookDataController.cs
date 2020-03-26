@@ -4,10 +4,14 @@ using KoobookServiceConsoleApp.GoodReadsApi;
 using KoobookServiceConsoleApp.GoogleBooksApi;
 using KoobookServiceConsoleApp.GoolgeBooksApi;
 using KoobookServiceConsoleApp.TCP;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -23,10 +27,13 @@ namespace KoobookServiceConsoleApp
         string goodreadsApiKey;
         string goodreadsApiSecret;
         GoodreadsApi goodreadsApi;
+        AmazonWebScraper amazonWebScraper;
+        DominantColorWebScraper dominantColorWebScraper;
         TCPServer server;
         Task<Book> goodreadsTask;
         Task<GoogleBookModel> googleBookTask;
         Task<AmazonModel> amazonTask;
+        string dominantColorString; 
 
         public BookDataController()
         {
@@ -46,10 +53,11 @@ namespace KoobookServiceConsoleApp
         {
             bookModel = new BookModel();
             server = new TCPServer();
-
-            AmazonWebScraper amazonWebScraper = new AmazonWebScraper();
+            dominantColorWebScraper = new DominantColorWebScraper();
+            amazonWebScraper = new AmazonWebScraper();
             AmazonModel amazonBookData = null;
-            amazonTask = amazonWebScraper.CollectDataForBook(data);
+
+            IWebDriver driver = new ChromeDriver(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
 
             //If the data doesnt contain the isbn then the isbn will be initially retrieved
             //from the google books api which is then passed into the good reads api solution
@@ -58,23 +66,36 @@ namespace KoobookServiceConsoleApp
             if (dataContainsIsbn.Equals(false))
             {
                 googleBookTask = googleBookApi.CollectDataForBook(data);
+                amazonTask = amazonWebScraper.CollectDataForBook(driver, data);
                 var isbn = GetIsbn(googleBookModel);
                 goodreadsTask = goodreadsApi.SearchByIsbn(isbn);
             }
             else
             {
                 googleBookTask = googleBookApi.CollectDataForBook(data);
+                amazonTask = amazonWebScraper.CollectDataForBook(driver, data);
                 goodreadsTask = goodreadsApi.SearchByIsbn(data);
             }
 
             Task.WhenAll(amazonTask,googleBookTask, goodreadsTask);
+
+            googleBookModel = googleBookTask.Result;
+
+            //Check if model has a valid thumbnail url
+            if (googleBookModel.ThumbnailUrl.Count() > 2)
+            {
+                DominantColorWebScraper dominantColorWebScraper = new DominantColorWebScraper();
+                var dominantColour = dominantColorWebScraper.GetDominantColor(driver, googleBookModel.ThumbnailUrl);
+                dominantColorString = dominantColour;
+            }
+
             var book = goodreadsTask.Result;
             GoodreadsModel goodreadsModel = null;
             if (book != null)
             {
                 goodreadsModel = goodreadsApi.CollectDataForBook(book);
             }
-            googleBookModel = googleBookTask.Result;
+            
             amazonBookData = amazonTask.Result;
             SetDescription(goodreadsModel, googleBookModel);
 
@@ -90,7 +111,10 @@ namespace KoobookServiceConsoleApp
             SetSubtitle(googleBookModel);
             SetIsbn(goodreadsModel, googleBookModel, data);
             SetThumbnailUrl(googleBookModel);
+            SetDominantColor(dominantColorString);
         }
+
+       
 
         //This method works by iterating through each book from the list of books(passed into the method's arguments). For each book, the book's title, authors, thumnbail, isbn is appended using a string builder. 
         //Each data attribute is separated by the "$" symbol and if there are more than one author, then each author will be separated by the "#" symbol. After the book's details are appended, the string builder appends
@@ -230,7 +254,8 @@ namespace KoobookServiceConsoleApp
 
 
                 Append(sb, bookModel.PageCount.ToString(), "$");
-                Append(sb, bookModel.ThumbnailUrl.ToString(), "$");
+                Append(sb, bookModel.ThumbnailUrl, "$");
+                Append(sb, bookModel.DominantColor, "$");
                 return sb.ToString();
             }
             catch (Exception e)
@@ -252,6 +277,14 @@ namespace KoobookServiceConsoleApp
                 sb.Append("*" + writeChar);
             }
 
+        }
+
+        //This method would assign the dominant colour value to the book model iff it is not null
+        private void SetDominantColor(string dominantColor)
+        {
+                if (!String.IsNullOrEmpty(dominantColor)) {
+                    bookModel.DominantColor = dominantColor;
+                }
         }
 
         //This method works by checking whether the GoogleBookModel object(passed into the method's argument) is not null. If it is not null then it will check whether the Thumbnail url attribute is null or empty. If it is

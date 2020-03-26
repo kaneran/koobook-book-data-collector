@@ -24,7 +24,7 @@ namespace KoobookServiceConsoleApp.Helper
         //After waiting, the elements are returned as a list by this method.
         public List<IWebElement> WaitForElementsToBeVisible(IWebDriver driver, By by)
         {
-            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
             var elements = wait.Until(ExpectedConditions.VisibilityOfAllElementsLocatedBy(by));
             return elements.ToList();
         }

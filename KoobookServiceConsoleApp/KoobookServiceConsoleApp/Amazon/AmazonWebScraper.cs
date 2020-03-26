@@ -18,11 +18,12 @@ namespace KoobookServiceConsoleApp.Amazon
         //This method works by using Selenium WebDriver to navigate to Amazon search results url which is appended with the isbn(passed into the method's argument)
         //It then clicks on the first product from the search result which is presumbably the book with the corresponding isbn. It then proceeds to scrap the relevent data including ratings and reviews
         //It then uses the scrapped data to assign it to the AmazonModel instance which is then returned by this method. 
-        public async Task<AmazonModel> CollectDataForBook(string isbn)
+        public async Task<AmazonModel> CollectDataForBook(IWebDriver driver,string isbn)
         {
+
             ChromeOptions options = new ChromeOptions();
             //options.AddArguments("headless");
-            IWebDriver driver = new ChromeDriver(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+          
             SeleniumHelper helper = new SeleniumHelper();
             amazonModel = new AmazonModel();
             driver.Navigate().GoToUrl("https://www.amazon.co.uk/s?k="+isbn+"&ref=nb_sb_noss");
@@ -89,7 +90,6 @@ namespace KoobookServiceConsoleApp.Amazon
                     amazonModel.Reviews = new List<string>();
                 }
                 amazonModel.ReviewCount = reviewsCount;
-                driver.Quit();
             }
             return amazonModel;
         }
@@ -217,8 +217,7 @@ namespace KoobookServiceConsoleApp.Amazon
         {
             try
             {
-
-                var searchResults = driver.FindElements(By.ClassName("s-result-list"))[1];
+                var searchResults = driver.FindElements(By.ClassName("s-result-list"))[0];
                 var searchResultItems = searchResults.FindElements(By.ClassName("s-result-item")).ToList();
                 var targetResultItem = searchResultItems.First();
                 var targetResultThumbnailImage = targetResultItem.FindElement(By.ClassName("s-image-fixed-height"));

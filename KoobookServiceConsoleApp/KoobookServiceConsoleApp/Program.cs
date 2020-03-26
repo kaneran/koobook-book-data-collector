@@ -22,11 +22,13 @@ namespace KoobookServiceConsoleApp
             TCPServer server = new TCPServer();
             server.Listen();
 
+
+
             //BookDataController bookDataController = new BookDataController();
             //bookDataController.CollectDataFromSources("9780007354771");
 
             //AmazonWebScraper amazonWebScraper = new AmazonWebScraper();
-            //amazonWebScraper.CollectDataForBook("9780007354771", "");
+            //amazonWebScraper.CollectDataForBook("9780007354771");
   
         }
     }

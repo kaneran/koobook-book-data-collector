@@ -62,6 +62,8 @@ namespace KoobookServiceConsoleApp.GoolgeBooksApi
 
         public List<IndustryIdentifiersData> IndustryIdentifiersDatas { get; set; }
 
+    
+
     }
 
 }

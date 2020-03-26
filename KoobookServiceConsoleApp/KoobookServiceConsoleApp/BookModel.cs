@@ -114,6 +114,12 @@ namespace KoobookServiceConsoleApp
             set;
         }
 
+        public string DominantColor {
+
+            get;
+            set;
+        }
+
 
 
 
